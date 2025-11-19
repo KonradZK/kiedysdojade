@@ -1,27 +1,34 @@
-import { useEffect, useState } from "react"
-import { MapContainer, TileLayer } from "react-leaflet"
-import "leaflet/dist/leaflet.css"
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+import { markerPositions, polylines } from "./mocked/positions";
+import { Markers } from "./components/ui/mapComponents/markers";
+import { Polylines } from "./components/ui/mapComponents/polylines";
+import type { LatLngExpression } from "leaflet";
+import { Route, type RouteProps } from "./components/ui/route";
+import { availableRoutes } from "./mocked/availableRoutes";
 
 function App() {
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(false);
 
   // Odczyt z localStorage przy starcie
   useEffect(() => {
-    const darkMode = localStorage.getItem("theme") === "dark"
-    setIsDark(darkMode)
-    document.documentElement.classList.toggle("dark", darkMode)
-  }, [])
+    const darkMode = localStorage.getItem("theme") === "dark";
+    setIsDark(darkMode);
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, []);
 
   // Zmiana motywu
   const toggleTheme = (value: boolean) => {
-    setIsDark(value)
-    document.documentElement.classList.toggle("dark", value)
-    localStorage.setItem("theme", value ? "dark" : "light")
-  }
+    setIsDark(value);
+    document.documentElement.classList.toggle("dark", value);
+    localStorage.setItem("theme", value ? "dark" : "light");
+  };
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
@@ -43,7 +50,10 @@ function App() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="start" className="text-sm font-medium text-foreground">
+          <Label
+            htmlFor="start"
+            className="text-sm font-medium text-foreground"
+          >
             Punkt początkowy
           </Label>
           <Input
@@ -66,6 +76,33 @@ function App() {
           />
         </div>
       </aside>
+      <aside
+        className="absolute top-68 left-4 z-10 w-80 
+        bg-sidebar text-sidebar-foreground 
+        border border-sidebar-border 
+        shadow-xl rounded-xl 
+        p-6 flex flex-col gap-4"
+      >
+        {/* lista z trasami */}
+        <div className="flex-col mb-2">
+          <Label className="text-sm font-medium text-foreground mb-4">
+            Dostępne trasy:
+          </Label>
+          <div className="flex-col list-group ">
+            {availableRoutes?.map((route: RouteProps) => (
+              <Route
+                timeToGo={route.timeToGo}
+                lines={route.lines}
+                departureTime={route.departureTime}
+                arriveTime={route.arriveTime}
+                routeTime={route.routeTime}
+                isDarkMode={isDark}
+                status={route.status}
+              />
+            ))}
+          </div>
+        </div>
+      </aside>
 
       {/* Mapa */}
       <div className="absolute inset-0">
@@ -74,6 +111,10 @@ function App() {
           zoom={13}
           className="w-full h-full z-0"
         >
+          {markerPositions.map((position: LatLngExpression) => (
+            <Markers position={position} />
+          ))}
+          <Polylines positions={polylines} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -81,7 +122,7 @@ function App() {
         </MapContainer>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
