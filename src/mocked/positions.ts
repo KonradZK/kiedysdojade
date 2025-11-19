@@ -2,7 +2,7 @@ import type { LatLngExpression } from "leaflet";
 
 const markerPositions: LatLngExpression[] = [
   [52.397587, 16.921295],
-  [52.401939, 16.920834],
+  // [52.401939, 16.920834],
   [52.40309, 16.915453],
 ];
 

@@ -10,6 +10,8 @@ import { markerPositions, polylines } from "./mocked/positions";
 import { Markers } from "./components/ui/mapComponents/markers";
 import { Polylines } from "./components/ui/mapComponents/polylines";
 import type { LatLngExpression } from "leaflet";
+import { Route, type RouteProps } from "./components/ui/route";
+import { availableRoutes } from "./mocked/availableRoutes";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -72,6 +74,33 @@ function App() {
             className="border border-input bg-secondary text-foreground
             rounded-md focus:ring-ring focus:border-ring transition-colors"
           />
+        </div>
+      </aside>
+      <aside
+        className="absolute top-68 left-4 z-10 w-80 
+        bg-sidebar text-sidebar-foreground 
+        border border-sidebar-border 
+        shadow-xl rounded-xl 
+        p-6 flex flex-col gap-4"
+      >
+        {/* lista z trasami */}
+        <div className="flex-col mb-2">
+          <Label className="text-sm font-medium text-foreground mb-4">
+            Dostępne trasy:
+          </Label>
+          <div className="flex-col list-group ">
+            {availableRoutes?.map((route: RouteProps) => (
+              <Route
+                timeToGo={route.timeToGo}
+                lines={route.lines}
+                departureTime={route.departureTime}
+                arriveTime={route.arriveTime}
+                routeTime={route.routeTime}
+                isDarkMode={isDark}
+                status={route.status}
+              />
+            ))}
+          </div>
         </div>
       </aside>
 
