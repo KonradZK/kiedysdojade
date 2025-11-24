@@ -1,8 +1,6 @@
 import { Marker } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
 import { divIcon } from "leaflet";
 
-// Define a more sophisticated custom icon using HTML and CSS
 const PinIcon = divIcon({
   html: `
     <div style="
@@ -33,16 +31,12 @@ const PinIcon = divIcon({
   popupAnchor: [0, -40], // Position popup above the tip
 });
 
-// Define the props interface
-interface MarkersProps {
-  position: LatLngExpression;
-}
+type MarkerProps = {
+  position: { lat: number; lng: number };
+};
 
-/**
- * A custom-styled marker component that displays a popup on click.
- */
-function Markers({ position }: MarkersProps) {
+const CustomMarker = ({ position }: MarkerProps) => {
   return <Marker position={position} icon={PinIcon} />;
 }
 
-export { Markers };
+export default CustomMarker;

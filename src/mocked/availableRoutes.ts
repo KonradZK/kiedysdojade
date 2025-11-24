@@ -1,4 +1,4 @@
-import type { RouteProps } from "@/components/ui/route";
+import type { RouteProps } from "@/components/sidebar/route";
 
 const availableRoutes: RouteProps[] = [
   {

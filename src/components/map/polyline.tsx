@@ -2,11 +2,11 @@ import { Polyline } from "react-leaflet";
 
 import type { LatLngExpression } from "leaflet";
 
-interface PolylinesProps {
+interface PolylineProps {
   positions: LatLngExpression[][];
 }
 
-function Polylines({ positions }: PolylinesProps) {
+function Polylines({ positions }: PolylineProps) {
   return (
     <Polyline
       pathOptions={{
