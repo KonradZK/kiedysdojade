@@ -31,12 +31,19 @@ const PinIcon = divIcon({
   popupAnchor: [0, -40], // Position popup above the tip
 });
 
-type MarkerProps = {
-  position: { lat: number; lng: number };
+type MarkerPosition = {
+  lat: number;
+  lng: number;
 };
 
-const CustomMarker = ({ position }: MarkerProps) => {
-  return <Marker position={position} icon={PinIcon} />;
-}
+const CustomMarkers = ({ positions }: { positions: MarkerPosition[] }) => {
+  return (
+    <>
+      {positions.map((position, index) => (
+        <Marker key={`${position.lat}-${position.lng}-${index}`} position={position} icon={PinIcon} />
+      ))}
+    </>
+  );
+};
 
-export default CustomMarker;
+export { CustomMarkers };
