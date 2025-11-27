@@ -1,4 +1,3 @@
-import { ArrowLeft } from "lucide-react";
 import type { Stop } from "@/types/stop";
 import type { RouteProps, Line } from "@/mocked/availableRoutes";
 import { Card, CardContent } from "../ui/card";

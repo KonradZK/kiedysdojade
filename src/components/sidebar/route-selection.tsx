@@ -4,16 +4,18 @@ import { Button } from "../ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Item } from "@/components/ui/item";
-import type { Stop } from "@/types/stop";
+import type { Groupnames } from "@/types/stop";
 
 interface RouteSelectionProps {
-  stops: Array<Stop>;
+  group: Array<Groupnames>;
   onSelect: (start: string, end: string) => void;
   disabled?: boolean;
 }
 
+
+// type item -> type groupnames
 export const RouteSelection: React.FC<RouteSelectionProps> = ({
-  stops,
+  group,
   onSelect,
   disabled = false,
 }) => {
@@ -23,12 +25,16 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [hoveredName, setHoveredName] = useState<string>("");
   const [selectedStart, setSelectedStart] = useState<{
-    code: string;
-    name: string;
+      group_code: string;
+      group_name: string;
+    // code: string;
+    // name: string;
   } | null>(null);
   const [selectedEnd, setSelectedEnd] = useState<{
-    code: string;
-    name: string;
+    group_code: string;
+    group_name: string;
+    // code: string;
+    // name: string;
   } | null>(null);
 
   const startInputRef = useRef<HTMLInputElement>(null);
@@ -37,21 +43,21 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
 
   const startSuggestions = useMemo(() => {
     if (!startInput) return [];
-    return stops
-      .filter((stop) =>
-        stop.name.toLowerCase().includes(startInput.toLowerCase())
+    return group
+      .filter((item) =>
+        item.group_name?.toLowerCase().includes(startInput.toLowerCase())
       )
       .slice(0, 8);
-  }, [startInput, stops]);
+  }, [startInput, group]);
 
   const endSuggestions = useMemo(() => {
     if (!endInput) return [];
-    return stops
-      .filter((stop) =>
-        stop.name.toLowerCase().includes(endInput.toLowerCase())
+    return group
+      .filter((item) =>
+        item.group_name?.toLowerCase().includes(endInput.toLowerCase())
       )
       .slice(0, 8);
-  }, [endInput, stops]);
+  }, [endInput, group]);
 
   const suggestions = focused === "start" ? startSuggestions : endSuggestions;
   const setInputValue = focused === "start" ? setStartInput : setEndInput;
@@ -61,20 +67,20 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
     if (e.key === "ArrowDown") {
       setSelectedIndex((prev) => {
         const next = Math.min(prev + 1, suggestions.length - 1);
-        setHoveredName(suggestions[next]?.name || "");
+        setHoveredName(suggestions[next]?.group_name || "");
         return next;
       });
       e.preventDefault();
     } else if (e.key === "ArrowUp") {
       setSelectedIndex((prev) => {
         const next = Math.max(prev - 1, 0);
-        setHoveredName(suggestions[next]?.name || "");
+        setHoveredName(suggestions[next]?.group_name || "");
         return next;
       });
       e.preventDefault();
     } else if (e.key === "Enter" && selectedIndex >= 0) {
       const selected = suggestions[selectedIndex];
-      setInputValue(selected.name);
+      setInputValue(selected.group_name);
       setHoveredName("");
       setSelectedIndex(-1);
       setFocused(null);
@@ -103,14 +109,14 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           ? startSuggestions[selectedIndex]
           : startSuggestions[0];
       if (selected) {
-        setStartInput(selected.name);
+        setStartInput(selected.group_name);
         setSelectedStart(selected);
       }
     } else {
       const selected =
         selectedIndex >= 0 ? endSuggestions[selectedIndex] : endSuggestions[0];
       if (selected) {
-        setEndInput(selected.name);
+        setEndInput(selected.group_name);
         setSelectedEnd(selected);
       }
     }
@@ -163,7 +169,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-500 ease-in-out text-md font-bold"
         onClick={() => {
           if (selectedStart && selectedEnd) {
-            onSelect(selectedStart.code, selectedEnd.code);
+            onSelect(selectedStart.group_code, selectedEnd.group_code);
           }
         }}
       >
@@ -174,28 +180,25 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           <CardContent className="p-0">
             <ScrollArea className="h-48 w-full rounded">
               <ul>
-                {suggestions.map((stop, idx) => (
+                {suggestions.map((item, idx) => (
                   <Item
-                    key={stop.code}
+                    key={item.group_code}
                     className={`px-3 py-2 cursor-pointer rounded ${
                       selectedIndex === idx
                         ? "bg-secondary/70"
                         : "hover:bg-secondary"
                     }`}
                     onMouseDown={() => {
-                      setInputValue(stop.name);
+                      setInputValue(item.group_name);
                       setHoveredName("");
                       setSelectedIndex(-1);
                       setFocused(null);
-                      if (focused === "start") setSelectedStart(stop);
-                      if (focused === "end") setSelectedEnd(stop);
+                      if (focused === "start") setSelectedStart(item);
+                      if (focused === "end") setSelectedEnd(item);
                     }}
                   >
                     <div className="flex flex-col">
-                      <span className="font-semibold">{stop.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Kod: {stop.code}
-                      </span>
+                      <span className="font-semibold">{item.group_name}</span>
                     </div>
                   </Item>
                 ))}

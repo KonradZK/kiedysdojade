@@ -1,4 +1,4 @@
-import type { Stop } from "@/types/stop";
+import type { Groupnames, Stop } from "@/types/stop";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import {
@@ -12,9 +12,9 @@ import { Label } from "../ui/label";
 import type { RouteProps, Line } from "@/mocked/availableRoutes";
 
 interface AvailableRoutesProps {
-  stops: Array<Stop>;
+  stops: Array<Groupnames>;
   routes: Array<RouteProps>;
-  onSelect: (stop_id: string) => void;
+  onSelect: (stop_code: string) => void;
   onHoverRoute: (stops: Array<Stop>) => void;
 }
 
@@ -26,18 +26,17 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
 }) => {
 
   return (
-    <div className="flex flex-col gap-2">
-      <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="">
-            <ul className="flex flex-col gap-2 p-4">
+    <div className="flex flex-col gap-2 h-full">
+      <Card className="h-full border-0 shadow-none">
+        <CardContent className="p-0 h-full">
+          <ScrollArea className="h-full pr-4">
+            <ul className="flex flex-col gap-2 pb-4">
               {routes.map((route, idx) => (
                 <li key={idx}>
                   <Item
                     className="cursor-pointer hover:bg-accent/50 transition-colors"
                     onClick={() => {
                       onSelect(route.id);
-                      // onSelect(route.stops.code);
                       onHoverRoute(route.stops || []);
                     }}
                     onMouseEnter={() => {
