@@ -9,16 +9,27 @@ import type { Stop } from "@/types/stop";
 interface RouteSelectionProps {
   stops: Array<Stop>;
   onSelect: (start: string, end: string) => void;
+  disabled?: boolean;
 }
 
-export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect }) => {
+export const RouteSelection: React.FC<RouteSelectionProps> = ({
+  stops,
+  onSelect,
+  disabled = false,
+}) => {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
   const [focused, setFocused] = useState<"start" | "end" | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [hoveredName, setHoveredName] = useState<string>("");
-  const [selectedStart, setSelectedStart] = useState<{ code: string; name: string } | null>(null);
-  const [selectedEnd, setSelectedEnd] = useState<{ code: string; name: string } | null>(null);
+  const [selectedStart, setSelectedStart] = useState<{
+    code: string;
+    name: string;
+  } | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<{
+    code: string;
+    name: string;
+  } | null>(null);
 
   const startInputRef = useRef<HTMLInputElement>(null);
   const endInputRef = useRef<HTMLInputElement>(null);
@@ -26,12 +37,20 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
 
   const startSuggestions = useMemo(() => {
     if (!startInput) return [];
-    return stops.filter(stop => stop.name.toLowerCase().includes(startInput.toLowerCase())).slice(0, 8);
+    return stops
+      .filter((stop) =>
+        stop.name.toLowerCase().includes(startInput.toLowerCase())
+      )
+      .slice(0, 8);
   }, [startInput, stops]);
 
   const endSuggestions = useMemo(() => {
     if (!endInput) return [];
-    return stops.filter(stop => stop.name.toLowerCase().includes(endInput.toLowerCase())).slice(0, 8);
+    return stops
+      .filter((stop) =>
+        stop.name.toLowerCase().includes(endInput.toLowerCase())
+      )
+      .slice(0, 8);
   }, [endInput, stops]);
 
   const suggestions = focused === "start" ? startSuggestions : endSuggestions;
@@ -70,6 +89,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
   };
 
   const handleFocus = (type: "start" | "end") => {
+    if (disabled) return;
     setFocused(type);
     setSelectedIndex(-1);
     setHoveredName("");
@@ -78,13 +98,17 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
   const handleBlur = (type: "start" | "end") => {
     setFocused(null);
     if (type === "start") {
-      const selected = selectedIndex >= 0 ? startSuggestions[selectedIndex] : startSuggestions[0];
+      const selected =
+        selectedIndex >= 0
+          ? startSuggestions[selectedIndex]
+          : startSuggestions[0];
       if (selected) {
         setStartInput(selected.name);
         setSelectedStart(selected);
       }
     } else {
-      const selected = selectedIndex >= 0 ? endSuggestions[selectedIndex] : endSuggestions[0];
+      const selected =
+        selectedIndex >= 0 ? endSuggestions[selectedIndex] : endSuggestions[0];
       if (selected) {
         setEndInput(selected.name);
         setSelectedEnd(selected);
@@ -100,9 +124,10 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
         <Input
           id="start"
           ref={startInputRef}
+          disabled={disabled}
           placeholder="Skąd?"
           value={focused === "start" && hoveredName ? hoveredName : startInput}
-          onChange={e => {
+          onChange={(e) => {
             setStartInput(e.target.value);
             setHoveredName("");
             setSelectedIndex(-1);
@@ -117,9 +142,10 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
         <Input
           id="end"
           ref={endInputRef}
+          disabled={disabled}
           placeholder="Dokąd?"
           value={focused === "end" && hoveredName ? hoveredName : endInput}
-          onChange={e => {
+          onChange={(e) => {
             setEndInput(e.target.value);
             setHoveredName("");
             setSelectedIndex(-1);
@@ -133,13 +159,13 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
       <Button
         ref={searchButtonRef}
         variant="outline"
+        disabled={disabled || !selectedStart || !selectedEnd}
         className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-500 ease-in-out text-md font-bold"
         onClick={() => {
           if (selectedStart && selectedEnd) {
             onSelect(selectedStart.code, selectedEnd.code);
           }
         }}
-        disabled={!selectedStart || !selectedEnd}
       >
         Wyszukaj
       </Button>
@@ -151,7 +177,11 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
                 {suggestions.map((stop, idx) => (
                   <Item
                     key={stop.code}
-                    className={`px-3 py-2 cursor-pointer rounded ${selectedIndex === idx ? "bg-secondary/70" : "hover:bg-secondary"}`}
+                    className={`px-3 py-2 cursor-pointer rounded ${
+                      selectedIndex === idx
+                        ? "bg-secondary/70"
+                        : "hover:bg-secondary"
+                    }`}
                     onMouseDown={() => {
                       setInputValue(stop.name);
                       setHoveredName("");
@@ -163,7 +193,9 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({ stops, onSelect 
                   >
                     <div className="flex flex-col">
                       <span className="font-semibold">{stop.name}</span>
-                      <span className="text-xs text-muted-foreground">Kod: {stop.code}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Kod: {stop.code}
+                      </span>
                     </div>
                   </Item>
                 ))}

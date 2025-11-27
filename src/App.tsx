@@ -4,11 +4,14 @@ import "leaflet/dist/leaflet.css";
 import Sidebar from "./components/sidebar";
 import Map from "./components/map";
 import type { Stop } from "./types/stop";
+import { mockedStops } from "./mocked/stops";
+import type { StopTimes } from "./types/stop_time";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
   const [stops, setStops] = useState<Array<Stop>>([]);
   const [routeStops, setRouteStops] = useState<Array<Stop>>([]);
+  const [stopTimes, setStopTimes] = useState<Array<StopTimes>>([]);
 
   // cache
   useEffect(() => {
@@ -31,6 +34,11 @@ function App() {
           // obsługa błędu pobierania
         });
     }
+
+    const cahedTimes = localStorage.getItem("stop_times");
+    if (cahedTimes) {
+      setStopTimes(JSON.parse(cahedTimes));
+    }
   }, []);
 
   // Zmiana motywu
@@ -45,9 +53,20 @@ function App() {
     setRouteStops(route);
   };
 
+  const handleShowTimes = (times: Array<StopTimes>) => {
+    setStopTimes(times);
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
-      <Sidebar isDark={isDark} toggleTheme={toggleTheme} stops={stops} onShowRoute={handleShowRoute} />
+      <Sidebar
+        isDark={isDark}
+        toggleTheme={toggleTheme}
+        stops={stops}
+        onShowRoute={handleShowRoute}
+        onShowTimes={handleShowTimes}
+        routeStops={routeStops}
+      />
       <Map stops={routeStops} />
     </div>
   );
