@@ -1,5 +1,4 @@
 import type { Stop } from "@/types/stop";
-import { useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import {
@@ -11,9 +10,6 @@ import {
 } from "../ui/item";
 import { Label } from "../ui/label";
 import type { RouteProps, Line } from "@/mocked/availableRoutes";
-
-
-
 
 interface AvailableRoutesProps {
   stops: Array<Stop>;
@@ -28,10 +24,6 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
   onSelect,
   onHoverRoute,
 }) => {
-  const [hoveredItem, setHoveredItem] = useState<string>("");
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-
-  
 
   return (
     <div className="flex flex-col gap-2">
@@ -44,16 +36,14 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
                   <Item
                     className="cursor-pointer hover:bg-accent/50 transition-colors"
                     onClick={() => {
-                      setSelectedIndex(idx);
                       onSelect(route.id);
+                      // onSelect(route.stops.code);
                       onHoverRoute(route.stops || []);
                     }}
                     onMouseEnter={() => {
-                      setHoveredItem(route.id);
                       onHoverRoute(route.stops || []);
                     }}
                     onMouseLeave={() => {
-                      setHoveredItem("");
                       onHoverRoute([]);
                     }}
                   >

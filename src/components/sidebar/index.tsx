@@ -5,6 +5,8 @@ import { availableRoutes } from "@/mocked/availableRoutes";
 import AvailableRoutes from "./available-routes";
 import { useState } from "react";
 import type { StopTimes } from "@/types/stop_time";
+import { Button } from "../ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface SidebarProps {
   isDark: boolean;
@@ -64,14 +66,41 @@ const Sidebar = ({
     onShowRoute(stops);
   };
 
+  const handleBack = () => {
+    if (selectedTripId) {
+      setSelectedTripId(null);
+    } else if (isRouteSelected) {
+      setIsRouteSelected(false);
+      onShowRoute([]);
+    }
+  };
+
+  const selectedRoute = availableRoutes.find(
+    (route) => route.id === selectedTripId
+  );
+
   return (
-    <>
-      <aside className="absolute top-4 left-4 z-10 w-80 bg-sidebar text-sidebar-foreground border border-sidebar-border shadow-xl rounded-xl p-6 flex flex-col gap-2 transition-all duration-500 ease-in-out">
-        <SidebarHeader isDark={isDark} toggleTheme={toggleTheme} />
-        <RouteSelection stops={stops} onSelect={handleRouteSelect} />
-      </aside>
+    <aside className="absolute top-4 left-4 z-10 w-80 bg-sidebar text-sidebar-foreground border border-sidebar-border shadow-xl rounded-xl p-6 flex flex-col gap-2 transition-all duration-500 ease-in-out max-h-[90vh] overflow-hidden">
+      <SidebarHeader isDark={isDark} toggleTheme={toggleTheme} />
+      <RouteSelection
+        stops={stops}
+        onSelect={handleRouteSelect}
+        disabled={isRouteSelected}
+      />
+      
       {isRouteSelected && (
-        <aside className="absolute top-80 left-4 z-10 w-80 bg-sidebar text-sidebar-foreground border border-sidebar-border shadow-xl rounded-xl flex flex-col gap-2 transition-all duration-500 ease-in-out">
+        <div className="flex items-center gap-2">
+           <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 shrink-0">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium text-muted-foreground">
+            {selectedTripId ? "Wróć do wyników" : "Wróć do wyszukiwania"}
+          </span>
+        </div>
+      )}
+
+      {isRouteSelected && (
+        <div className="flex-1 overflow-hidden flex flex-col">
           {!selectedTripId ? (
             <AvailableRoutes
               stops={stops}
@@ -80,11 +109,14 @@ const Sidebar = ({
               onHoverRoute={handleHoverRoute}
             />
           ) : (
-            <RouteDetails routeStops={routeStops} />
+            <RouteDetails
+              routeStops={routeStops}
+              route={selectedRoute}
+            />
           )}
-        </aside>
+        </div>
       )}
-    </>
+    </aside>
   );
 };
 

@@ -9,11 +9,13 @@ import type { Stop } from "@/types/stop";
 interface RouteSelectionProps {
   stops: Array<Stop>;
   onSelect: (start: string, end: string) => void;
+  disabled?: boolean;
 }
 
 export const RouteSelection: React.FC<RouteSelectionProps> = ({
   stops,
   onSelect,
+  disabled = false,
 }) => {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
@@ -87,6 +89,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
   };
 
   const handleFocus = (type: "start" | "end") => {
+    if (disabled) return;
     setFocused(type);
     setSelectedIndex(-1);
     setHoveredName("");
@@ -121,6 +124,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         <Input
           id="start"
           ref={startInputRef}
+          disabled={disabled}
           placeholder="Skąd?"
           value={focused === "start" && hoveredName ? hoveredName : startInput}
           onChange={(e) => {
@@ -138,6 +142,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         <Input
           id="end"
           ref={endInputRef}
+          disabled={disabled}
           placeholder="Dokąd?"
           value={focused === "end" && hoveredName ? hoveredName : endInput}
           onChange={(e) => {
@@ -154,13 +159,13 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
       <Button
         ref={searchButtonRef}
         variant="outline"
+        disabled={disabled || !selectedStart || !selectedEnd}
         className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-500 ease-in-out text-md font-bold"
         onClick={() => {
           if (selectedStart && selectedEnd) {
             onSelect(selectedStart.code, selectedEnd.code);
           }
         }}
-        disabled={!selectedStart || !selectedEnd}
       >
         Wyszukaj
       </Button>
