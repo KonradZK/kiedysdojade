@@ -29,9 +29,11 @@ const Sidebar = ({
   const [isRouteSelected, setIsRouteSelected] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [fetchedRoutes, setFetchedRoutes] = useState<import("@/mocked/availableRoutes").RouteProps[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // fetching
   const handleRouteSelect = (start: string, end: string) => {
+      setIsLoading(true);
       fetch("/api" + "/path?start_code=" + start + "&end_code=" + end)
       .then((response) => response.json())
       .then((data: NewStop) => {
@@ -116,11 +118,15 @@ const Sidebar = ({
               onShowRoute(data.stops);
 
             })
-            .catch(err => console.error("Error fetching stop times:", err));
+            .catch(err => console.error("Error fetching stop times:", err))
+            .finally(() => setIsLoading(false));
+        } else {
+             setIsLoading(false);
         }
       })
       .catch((error) => {
         console.error("Błąd podczas fetch:", error);
+        setIsLoading(false);
       });
     console.log("Wybrane przystanki:", start, end);
   };
@@ -186,10 +192,10 @@ const Sidebar = ({
         <div className="flex-1 overflow-hidden flex flex-col">
           {!selectedTripId ? (
             <AvailableRoutes
-              stops={stops}
               routes={fetchedRoutes}
               onSelect={handleStopSelect}
               onHoverRoute={handleHoverRoute}
+              isLoading={isLoading}
             />
           ) : (
             <RouteDetails

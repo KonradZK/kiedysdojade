@@ -1,6 +1,7 @@
-import type { Groupnames, Stop } from "@/types/stop";
+import type { Stop } from "@/types/stop";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
+import { Skeleton } from "../ui/skeleton";
 import {
   Item,
   ItemContent,
@@ -12,26 +13,46 @@ import { Label } from "../ui/label";
 import type { RouteProps, Line } from "@/mocked/availableRoutes";
 
 interface AvailableRoutesProps {
-  stops: Array<Groupnames>;
   routes: Array<RouteProps>;
   onSelect: (stop_code: string) => void;
   onHoverRoute: (stops: Array<Stop>) => void;
+  isLoading?: boolean;
 }
 
 const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
-  stops,
   routes,
   onSelect,
   onHoverRoute,
+  isLoading = false,
 }) => {
 
   return (
     <div className="flex flex-col gap-2 h-full">
       <Card className="h-full border-0 shadow-none">
         <CardContent className="p-0 h-full">
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-96 pr-4">
             <ul className="flex flex-col gap-2 pb-4">
-              {routes.map((route, idx) => (
+              {isLoading ? (
+                  Array.from({ length: 5 }).map((_, idx) => (
+                    <li key={idx}>
+                      <Card className="border-0 shadow-none">
+                        <CardContent className="p-0">
+                           <div className="flex items-center p-4 space-x-4">
+                             <div className="space-y-2">
+                               <Skeleton className="h-4 w-[60px]" />
+                               <Skeleton className="h-8 w-[60px]" />
+                             </div>
+                             <div className="flex-1 space-y-2">
+                               <Skeleton className="h-4 w-full" />
+                               <Skeleton className="h-4 w-3/4" />
+                             </div>
+                           </div>
+                        </CardContent>
+                      </Card>
+                    </li>
+                  ))
+              ) : (
+                routes.map((route, idx) => (
                 <li key={idx}>
                   <Item
                     className="cursor-pointer hover:bg-accent/50 transition-colors"
@@ -98,7 +119,8 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
                     </ItemActions>
                   </Item>
                 </li>
-              ))}
+              ))
+              )}
             </ul>
           </ScrollArea>
         </CardContent>
