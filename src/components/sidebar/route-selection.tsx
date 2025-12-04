@@ -185,23 +185,57 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         setSelectedIntermediate(selected);
       }
     }
-    setHoveredName("");
-    setSelectedIndex(-1);
+  };
+
+  const addIntermediate = () => {
+    if (!intermediates.length || intermediates[intermediates.length - 1] !== "") {
+      setIntermediates([...intermediates, ""]);
+    }
   };
 
   return (
-    <>
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
+      {/* Start */}
+      <Input
+        ref={startRef}
+        placeholder="Skąd?"
+        value={startInput}
+        onChange={(e) => setStartInput(e.target.value)}
+        onFocus={() => {
+          setFocused("start");
+          setSelectedIndex(0);
+        }}
+        onBlur={() => setFocused(null)}
+        onKeyDown={(e) => handleKeyDown(e, "start")}
+        disabled={disabled}
+      />
+
+      {/* End */}
+      <Input
+        ref={endRef}
+        placeholder="Dokąd?"
+        value={endInput}
+        onChange={(e) => setEndInput(e.target.value)}
+        onFocus={() => {
+          setFocused("end");
+          setSelectedIndex(0);
+        }}
+        onBlur={() => setFocused(null)}
+        onKeyDown={(e) => handleKeyDown(e, "end")}
+        disabled={disabled}
+      />
+
+      {/* Przystanki pośrednie */}
+      {intermediates.map((val, idx) => (
         <Input
-          id="start"
-          ref={startInputRef}
-          disabled={disabled}
-          placeholder="Skąd?"
-          value={focused === "start" && hoveredName ? hoveredName : startInput}
-          onChange={(e) => {
-            setStartInput(e.target.value);
-            setHoveredName("");
-            setSelectedIndex(-1);
+          key={idx}
+          placeholder={`Przystanek pośredni ${idx + 1}`}
+          value={val}
+          onChange={(e) => setInputValue("intermediate", e.target.value, idx)}
+          onFocus={() => {
+            setFocused("intermediate");
+            setActiveIntermediate(idx);
+            setSelectedIndex(0);
           }}
           onFocus={() => handleFocus("start")}
           onBlur={() => handleBlur("start")}
@@ -269,17 +303,6 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           id="end"
           ref={endInputRef}
           disabled={disabled}
-          placeholder="Dokąd?"
-          value={focused === "end" && hoveredName ? hoveredName : endInput}
-          onChange={(e) => {
-            setEndInput(e.target.value);
-            setHoveredName("");
-            setSelectedIndex(-1);
-          }}
-          onFocus={() => handleFocus("end")}
-          onBlur={() => handleBlur("end")}
-          onKeyDown={focused === "end" ? handleInputKeyDown : undefined}
-          className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-500 ease-in-out font-medium focus-visible:text-xl"
         />
       </div>
       
@@ -346,8 +369,10 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
       >
         Wyszukaj
       </Button>
-      {suggestions.length > 0 && focused ? (
-        <Card className="mt-4">
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && focused && (
+        <Card className="mt-2">
           <CardContent className="p-0">
             <ScrollArea className="h-48 w-full rounded">
               <ul>
@@ -379,7 +404,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
             </ScrollArea>
           </CardContent>
         </Card>
-      ) : null}
-    </>
+      )}
+    </div>
   );
 };
