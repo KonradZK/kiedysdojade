@@ -1,6 +1,6 @@
 interface NewStop {
   stops: Array<Stop>;
-  routes: Array<Array<string>>;
+  routes: Array<Route>;
   distance: number;
 }
 
@@ -12,12 +12,7 @@ interface Stop {
   lon: number;
   zone_id: string;
 }
-// type Route = {
-//   lines: Array<string>;
-// };
-
-interface Groupnames {
-  group_code: string;
-  group_name: string;
-}
-export type { Stop, NewStop, Groupnames };
+type Route = {
+  lines: Array<string>;
+};
+export type { Stop, NewStop };

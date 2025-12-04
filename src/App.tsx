@@ -3,12 +3,13 @@ import "leaflet/dist/leaflet.css";
 
 import Sidebar from "./components/sidebar";
 import Map from "./components/map";
-import type { Groupnames, Stop } from "./types/stop";
+import type { Stop } from "./types/stop";
+import { mockedStops } from "./mocked/stops";
 import type { StopTimes } from "./types/stop_time";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
-  const [stops, setStops] = useState<Array<Groupnames>>([]);
+  const [stops, setStops] = useState<Array<Stop>>([]);
   const [routeStops, setRouteStops] = useState<Array<Stop>>([]);
   const [stopTimes, setStopTimes] = useState<Array<StopTimes>>([]);
 
@@ -21,20 +22,17 @@ function App() {
     // Pobieranie i cache'owanie przystanków
     const cachedStops = localStorage.getItem("stops");
     if (cachedStops) {
-      try {
-        const parsedStops = JSON.parse(cachedStops);
-        // Simple validation to check if the data structure matches Groupnames
-        if (Array.isArray(parsedStops) && parsedStops.length > 0 && "group_name" in parsedStops[0]) {
-          setStops(parsedStops);
-        } else {
-          // Invalid cache, fetch fresh data
-          fetchStops();
-        }
-      } catch (e) {
-        fetchStops();
-      }
+      setStops(JSON.parse(cachedStops));
     } else {
-      fetchStops();
+      fetch("/api/stops")
+        .then((res) => res.json())
+        .then((data) => {
+          setStops(data);
+          localStorage.setItem("stops", JSON.stringify(data));
+        })
+        .catch(() => {
+          // obsługa błędu pobierania
+        });
     }
 
     const cahedTimes = localStorage.getItem("stop_times");
@@ -42,19 +40,6 @@ function App() {
       setStopTimes(JSON.parse(cahedTimes));
     }
   }, []);
-
-  const fetchStops = () => {
-    fetch("/api/stops/groupnames")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Fetched stops:", data);
-        setStops(data);
-        localStorage.setItem("stops", JSON.stringify(data));
-      })
-      .catch((err) => {
-        console.error("Error fetching stops:", err);
-      });
-  };
 
   // Zmiana motywu
   const toggleTheme = (value: boolean) => {

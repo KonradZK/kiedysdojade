@@ -1,10 +1,9 @@
+import { ArrowLeft } from "lucide-react";
 import type { Stop } from "@/types/stop";
 import type { RouteProps, Line } from "@/mocked/availableRoutes";
 import { Card, CardContent } from "../ui/card";
 import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item";
 import { Label } from "../ui/label";
-import { ScrollArea } from "../ui/scroll-area";
-import { MapPin } from "lucide-react";
 
 interface RouteDetailsProps {
   routeStops: Stop[];
@@ -21,7 +20,6 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
   }
 
   return (
-// wybrana trasa
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="font-semibold text-lg">Szczegóły trasy</h2>
@@ -79,20 +77,12 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
           </CardContent>
         </Card>
       )}
-{/* przystanki */}
+
       <div className="flex-1 overflow-y-auto pr-2">
-        <ScrollArea className="h-66">
         <ul className="relative border-l border-gray-300 dark:border-gray-600 pl-6 ml-3">
           {routeStops.map((stop, i) => (
             <li key={i} className="mb-6 relative last:mb-0">
-              {i === 0 || i === routeStops.length - 1 ? (
-                <div className="absolute -left-[35px] top-0 z-10 bg-background">
-                  <MapPin className="w-6 h-6 text-primary fill-primary/20" />
-                </div>
-              ) : (
-                <span className="absolute -left-[31px] top-1 w-4 h-4 bg-background border-2 border-primary rounded-full z-10"></span>
-              )
-              }
+              <span className="absolute -left-[31px] top-1 w-4 h-4 bg-background border-2 border-primary rounded-full z-10"></span>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">{stop.name}</span>
@@ -102,7 +92,6 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
             </li>
           ))}
         </ul>
-        </ScrollArea>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ interface StopTimes {
   stop_headsign: string;
   pickup_type: number;
   drop_off_type: number;
-  route_id: string;
 }
 
 export type { StopTimes };
