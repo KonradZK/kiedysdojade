@@ -1,5 +1,4 @@
-import type { Stop } from "@/types/stop";
-import type { RouteProps, Line } from "@/mocked/availableRoutes";
+import type { Stop, RouteProps, Line } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item";
 import { Label } from "../ui/label";

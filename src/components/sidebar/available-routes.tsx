@@ -1,4 +1,4 @@
-import type { Stop } from "@/types/stop";
+import type { Stop, RouteProps, Line } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
@@ -10,7 +10,6 @@ import {
   ItemActions,
 } from "../ui/item";
 import { Label } from "../ui/label";
-import type { RouteProps, Line } from "@/mocked/availableRoutes";
 
 interface AvailableRoutesProps {
   routes: Array<RouteProps>;

@@ -13,18 +13,18 @@ import { Button } from "../ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Item } from "@/components/ui/item";
-import type { Groupnames } from "@/types/stop";
+import { NearestStopButton } from "./nearest-stop-button";
+import { getSuggestions } from "@/utils/search-suggestions";
+import type { StopGroup } from "./types";
 
 interface RouteSelectionProps {
-  group: Array<Groupnames>;
+  stops: StopGroup[];
   onSelect: (start: string, end: string, intermediate?: string) => void;
   disabled?: boolean;
 }
 
-
-// type item -> type groupnames
 export const RouteSelection: React.FC<RouteSelectionProps> = ({
-  group,
+  stops,
   onSelect,
   disabled = false,
 }) => {
@@ -35,22 +35,9 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
   const [focused, setFocused] = useState<"start" | "end" | "intermediate" | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [hoveredName, setHoveredName] = useState<string>("");
-  const [selectedStart, setSelectedStart] = useState<{
-      group_code: string;
-      group_name: string;
-    // code: string;
-    // name: string;
-  } | null>(null);
-  const [selectedIntermediate, setSelectedIntermediate] = useState<{
-    group_code: string;
-    group_name: string;
-  } | null>(null);
-  const [selectedEnd, setSelectedEnd] = useState<{
-    group_code: string;
-    group_name: string;
-    // code: string;
-    // name: string;
-  } | null>(null);
+  const [selectedStart, setSelectedStart] = useState<StopGroup | null>(null);
+  const [selectedIntermediate, setSelectedIntermediate] = useState<StopGroup | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<StopGroup | null>(null);
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
@@ -71,31 +58,16 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
   const searchButtonRef = useRef<HTMLButtonElement>(null);
 
   const startSuggestions = useMemo(() => {
-    if (!startInput) return [];
-    return group
-      .filter((item) =>
-        item.group_name?.toLowerCase().includes(startInput.toLowerCase())
-      )
-      .slice(0, 8);
-  }, [startInput, group]);
+    return getSuggestions(startInput, stops);
+  }, [startInput, stops]);
 
   const endSuggestions = useMemo(() => {
-    if (!endInput) return [];
-    return group
-      .filter((item) =>
-        item.group_name?.toLowerCase().includes(endInput.toLowerCase())
-      )
-      .slice(0, 8);
-  }, [endInput, group]);
+    return getSuggestions(endInput, stops);
+  }, [endInput, stops]);
 
   const intermediateSuggestions = useMemo(() => {
-    if (!intermediateInput) return [];
-    return group
-      .filter((item) =>
-        item.group_name?.toLowerCase().includes(intermediateInput.toLowerCase())
-      )
-      .slice(0, 8);
-  }, [intermediateInput, group]);
+    return getSuggestions(intermediateInput, stops);
+  }, [intermediateInput, stops]);
 
   const suggestions =
     focused === "start"
@@ -192,22 +164,33 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
   return (
     <>
       <div className="flex flex-col gap-2">
-        <Input
-          id="start"
-          ref={startInputRef}
-          disabled={disabled}
-          placeholder="Skąd?"
-          value={focused === "start" && hoveredName ? hoveredName : startInput}
-          onChange={(e) => {
-            setStartInput(e.target.value);
-            setHoveredName("");
-            setSelectedIndex(-1);
-          }}
-          onFocus={() => handleFocus("start")}
-          onBlur={() => handleBlur("start")}
-          onKeyDown={focused === "start" ? handleInputKeyDown : undefined}
-          className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-500 ease-in-out font-medium focus-visible:text-xl"
-        />
+        <div className="relative">
+          <Input
+            id="start"
+            ref={startInputRef}
+            disabled={disabled}
+            placeholder="Skąd?"
+            autoComplete="off"
+            value={focused === "start" && hoveredName ? hoveredName : startInput}
+            onChange={(e) => {
+              setStartInput(e.target.value);
+              setHoveredName("");
+              setSelectedIndex(-1);
+            }}
+            onFocus={() => handleFocus("start")}
+            onBlur={() => handleBlur("start")}
+            onKeyDown={focused === "start" ? handleInputKeyDown : undefined}
+            className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl pr-10"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <NearestStopButton
+              onSelect={(stop) => {
+                setStartInput(stop.group_name);
+                setSelectedStart(stop);
+              }}
+            />
+          </div>
+        </div>
       </div>
       
       {showIntermediate && (
@@ -217,6 +200,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
             ref={intermediateInputRef}
             disabled={disabled}
             placeholder="Przez?"
+            autoComplete="off"
             value={
               focused === "intermediate" && hoveredName
                 ? hoveredName
@@ -232,7 +216,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
             onKeyDown={
               focused === "intermediate" ? handleInputKeyDown : undefined
             }
-            className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-500 ease-in-out font-medium focus-visible:text-xl pr-10"
+            className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl pr-10"
           />
           <Button
             variant="ghost"
@@ -270,6 +254,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           ref={endInputRef}
           disabled={disabled}
           placeholder="Dokąd?"
+          autoComplete="off"
           value={focused === "end" && hoveredName ? hoveredName : endInput}
           onChange={(e) => {
             setEndInput(e.target.value);
@@ -279,7 +264,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           onFocus={() => handleFocus("end")}
           onBlur={() => handleBlur("end")}
           onKeyDown={focused === "end" ? handleInputKeyDown : undefined}
-          className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-500 ease-in-out font-medium focus-visible:text-xl"
+          className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl"
         />
       </div>
       
@@ -319,6 +304,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           <div className="p-3 border-t border-border">
             <input
               type="time"
+              autoComplete="off"
               className="w-full p-2 border rounded-md bg-background text-foreground"
               value={date ? format(date, "HH:mm") : ""}
               onChange={handleTimeChange}
@@ -331,7 +317,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         ref={searchButtonRef}
         variant="outline"
         disabled={disabled || !selectedStart || !selectedEnd}
-        className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-500 ease-in-out text-md font-bold"
+        className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-300 ease-in-out text-md font-bold"
         onClick={() => {
           if (selectedStart && selectedEnd) {
             onSelect(

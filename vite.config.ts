@@ -13,10 +13,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://kiedysdojade.projektstudencki.pl",
+        target: "http://1732050.xyz",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        rewrite: (path) => path.replace(/^\/api/, "/projekt"),
       },
     },
   },

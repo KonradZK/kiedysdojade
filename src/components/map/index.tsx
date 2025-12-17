@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer } from "react-leaflet";
 import { useMemo } from "react";
-import type { Stop } from "@/types/stop";
+import type { Stop } from "../sidebar/types";
 import { CustomMarkers } from "./marker";
 import { Polylines } from "./polyline";
 
