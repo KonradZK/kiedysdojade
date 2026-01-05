@@ -6,6 +6,7 @@ import Map from "./components/map";
 import type { StopGroup, Stop } from "./components/sidebar/types";
 import { api } from "./services/api";
 import { LocalStorageCache } from "./utils/cache";
+import { ReportSystem } from "./components/reportsystem";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -56,6 +57,7 @@ function App() {
         onShowRoute={handleShowRoute}
         routeStops={routeStops}
       />
+      <ReportSystem />
       <Map stops={routeStops} />
     </div>
   );
