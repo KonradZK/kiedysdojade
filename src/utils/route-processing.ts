@@ -1,25 +1,54 @@
-import type { Path, RouteProps, Stop } from "@/components/sidebar/types";
+import type { Path, RouteProps, LineInfo } from "@/components/sidebar/types";
 
 /**
  * Transform raw route data from API into display-ready RouteProps objects
- * @param routes Array of routes from /path endpoint
- * @param firstStops Array of stops (Stop type) to display
- * @returns Array of RouteProps for sidebar display (max 5 routes)
+ * Each path becomes a separate route entry based on its line number
+ * @param paths Array of paths from /path endpoint (already cleaned - without group nodes)
+ * @returns Array of RouteProps for sidebar display
  */
 export function processRoutes(
-  paths: Path[],
-  firstStops: Stop[]
+  paths: Path[]
 ): RouteProps[] {
-  const lines = new Set<string>();
-  
-  // Collect unique line numbers
-  paths.forEach((path) => {
-    path.forEach((p) => {
-      if (p.line && p.line !== "WALK") lines.add(p.line);
-    });
-  });
+  const routes: RouteProps[] = [];
 
-  return paths.slice(0, 5).map((path, idx) => {
+  paths.forEach((path, pathIdx) => {
+    if (path.length < 3) return;
+
+    // Build line segments based on contiguous line values starting from index 2+
+    const segments: LineInfo[] = [];
+    let currentLine: string | null = null;
+    let segmentStartIdx = 2;
+
+    const pushSegment = (endIdx: number) => {
+      if (!currentLine || currentLine === "WALK" || currentLine === "GROUP_NODE") return;
+      const startCode = path[segmentStartIdx]?.stop.code;
+      const endCode = path[endIdx]?.stop.code;
+      if (!startCode || !endCode) return;
+      segments.push({
+        lineNumber: currentLine,
+        colorHex: undefined,
+        textColorHex: undefined,
+        startCode,
+        endCode,
+        shape: [],
+      });
+    };
+
+    for (let i = 2; i < path.length; i++) {
+      const ln = path[i].line;
+      if (ln !== currentLine) {
+        if (currentLine !== null) {
+          pushSegment(i - 1);
+          segmentStartIdx = i;
+        }
+        currentLine = ln;
+      }
+    }
+    pushSegment(path.length - 1);
+
+    if (segments.length === 0) return;
+
+    // First and last stop times
     const firstStop = path[0];
     const lastStop = path[path.length - 1];
 
@@ -48,15 +77,17 @@ export function processRoutes(
         60000
     );
 
-    return {
-      id: `route-${idx}-${Date.now()}`,
+    routes.push({
+      id: `route-${pathIdx}-${Date.now()}`,
       status: "Odjazd za",
       timeToGo: diffMins.toString(),
-      lines: Array.from(lines).map((line) => ({ lineNumber: line })),
+      lines: segments,
       departureTime: depTime,
       arriveTime: arrTime,
       routeTime: routeTime || 20,
-      stops: firstStops,
-    };
+      path: path,
+    });
   });
+
+  return routes;
 }

@@ -3,7 +3,7 @@ import "leaflet/dist/leaflet.css";
 
 import Sidebar from "./components/sidebar";
 import Map from "./components/map";
-import type { StopGroup, Stop } from "./components/sidebar/types";
+import type { StopGroup, Stop, PathElement, LineInfo } from "./components/sidebar/types";
 import { api } from "./services/api";
 import { LocalStorageCache } from "./utils/cache";
 
@@ -11,6 +11,10 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [stops, setStops] = useState<Array<StopGroup>>([]);
   const [routeStops, setRouteStops] = useState<Array<Stop>>([]);
+  // routePath can be derived when needed from selected route; omitted from state to reduce redundancy
+  const [selectedStart, setSelectedStart] = useState<StopGroup | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<StopGroup | null>(null);
+  const [routeLines, setRouteLines] = useState<Array<LineInfo>>([]);
 
   useEffect(() => {
     const darkMode = localStorage.getItem("theme") === "dark";
@@ -43,8 +47,14 @@ function App() {
     localStorage.setItem("theme", value ? "dark" : "light");
   };
 
-  const handleShowRoute = (route: Array<Stop>) => {
+  const handleShowRoute = (route: Array<Stop>, _path: Array<PathElement>, lines: Array<LineInfo>) => {
     setRouteStops(route);
+    setRouteLines(lines);
+  };
+
+  const handleStopSelect = (start: StopGroup | null, end: StopGroup | null) => {
+    setSelectedStart(start);
+    setSelectedEnd(end);
   };
 
   return (
@@ -54,9 +64,15 @@ function App() {
         toggleTheme={toggleTheme}
         stops={stops}
         onShowRoute={handleShowRoute}
+        onStopSelect={handleStopSelect}
         routeStops={routeStops}
       />
-      <Map stops={routeStops} />
+      <Map 
+        stops={routeStops} 
+        lines={routeLines}
+        selectedStart={selectedStart}
+        selectedEnd={selectedEnd}
+      />
     </div>
   );
 }
