@@ -1,7 +1,14 @@
 import type { Alert } from "@/components/reportsystem/types";
-import type { StopGroup, Path, TimeTable } from "../components/sidebar/types";
+import type {
+  StopGroup,
+  Path,
+  TimeTable,
+  ShapePoint,
+} from "../components/sidebar/types";
 
 export class API {
+  private routeInfoCache = new Map<string, any>();
+
   async getAlerts(): Promise<Alert[]> {
     const response = await fetch(`/api/alerts`);
     if (!response.ok) {
@@ -12,7 +19,7 @@ export class API {
     if (data === null) {
       return [];
     }
-    console.log(data);
+    // console.log(data);
 
     return data.map((item: Alert) => ({
       id: item.id,
@@ -69,11 +76,18 @@ export class API {
    * Fetch route between two stops
    * @param startCode - Starting stop code
    * @param endCode - Ending stop code
+   * @param departureTime - Optional departure time in HH:MM format
    */
-  async getAvailablePaths(startCode: string, endCode: string): Promise<Path[]> {
-    const response = await fetch(
-      `/api/path?start_code=${startCode}&end_code=${endCode}`
-    );
+  async getAvailablePaths(
+    startCode: string,
+    endCode: string,
+    departureTime?: string
+  ): Promise<Path[]> {
+    let url = `/api/path?start_code=${startCode}&end_code=${endCode}`;
+    if (departureTime) {
+      url += `&departure_time=${departureTime}`;
+    }
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch route: ${response.statusText}`);
     }
@@ -103,6 +117,42 @@ export class API {
       throw new Error(`Failed to fetch closest stop: ${response.statusText}`);
     }
     return response.json();
+  }
+
+  /**
+   * Fetch intermediate shape points between two stops on a route
+   * @param routeId - Route ID (line number)
+   * @param startCode - Starting stop code
+   * @param endCode - Ending stop code
+   */
+  async getShapePoints(
+    routeId: string,
+    startCode: string,
+    endCode: string
+  ): Promise<ShapePoint[]> {
+    const response = await fetch(
+      `/api/shapes/${routeId}/between?start_code=${startCode}&end_code=${endCode}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch shape points: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Fetch route metadata (colors, names) with simple in-memory cache
+   */
+  async getRouteInfo(routeId: string): Promise<any> {
+    if (this.routeInfoCache.has(routeId)) {
+      return this.routeInfoCache.get(routeId);
+    }
+    const response = await fetch(`/api/routes/${routeId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch route info: ${response.statusText}`);
+    }
+    const data = await response.json();
+    this.routeInfoCache.set(routeId, data);
+    return data;
   }
 }
 

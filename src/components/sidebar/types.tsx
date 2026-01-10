@@ -16,6 +16,8 @@ export interface Stop {
 export interface StopGroup {
   group_code: string;
   group_name: string;
+  lat: number;
+  lon: number;
 }
 
 /**
@@ -26,6 +28,16 @@ export interface PathElement {
   line: string | null;
   departure_time: string | null;
   arrival_time: string | null;
+}
+
+/**
+ * Punkt pośredni na trasie (dla gładszych polylinii)
+ */
+export interface ShapePoint {
+  id: number;
+  lat: number;
+  lon: number;
+  sequence: number;
 }
 
 /**
@@ -43,19 +55,24 @@ export interface TimeTableElement {
   route_id: string;
 }
 
-export interface Line {
+export interface LineInfo {
   lineNumber: string;
+  colorHex?: string;
+  textColorHex?: string;
+  startCode: string;
+  endCode: string;
+  shape: ShapePoint[];
 }
 
 export interface RouteProps {
   id: string;
   status: string;
   timeToGo: string;
-  lines: Line[];
+  lines: LineInfo[];
   departureTime: string;
   routeTime: number;
   arriveTime: string;
-  stops: Stop[];
+  path: Path;
 }
 
 export type Path = PathElement[];
