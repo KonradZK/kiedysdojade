@@ -1,21 +1,22 @@
 import { MapContainer, TileLayer } from "react-leaflet";
 import { useMemo } from "react";
 import type { Stop } from "../sidebar/types";
-import { CustomMarkers } from "./marker";
+import { Markers } from "./marker";
 import { Polylines } from "./polyline";
 
 interface MapProps {
   stops: Array<Stop>;
+  children?: React.ReactNode;
 }
 
 const DEFAULT_CENTER: [number, number] = [52.4064, 16.9252];
 
-const Map = ({ stops }: MapProps) => {
+const Map = ({ stops, children }: MapProps) => {
   const route = useMemo(() => {
     const positions = stops.map((stop) => ({ lat: stop.lat, lng: stop.lon }));
     return (
       <>
-        <CustomMarkers positions={positions} />
+        <Markers positions={positions} isAlert={false} />
         <Polylines positions={positions} />
       </>
     );
@@ -35,6 +36,7 @@ const Map = ({ stops }: MapProps) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {children}
       </MapContainer>
     </div>
   );

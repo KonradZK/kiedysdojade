@@ -1,49 +1,56 @@
 import { useState } from "react";
+import { useMapEvents } from "react-leaflet";
+import { api } from "../../services/api";
+import { IconSet, type Icon } from "./types";
 
-type Icon = {
-  id: string;
-  label: string;
-  icon: string;
-  // icon: React.ElementType;
+const MapClickListener = ({
+  onLocationSelect,
+}: {
+  onLocationSelect: (lat: number, lng: number) => void;
+}) => {
+  useMapEvents({
+    click: (e) => {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
 };
 
-const IconSet: Icon[] = [
-  { id: "kanar", label: "Kanar", icon: "👮" },
-  { id: "awaria", label: "Awaria", icon: "🚧" },
-  { id: "wypadek", label: "Wypadek", icon: "💥" },
-  { id: "opoznienie", label: "Opóźnienie", icon: "🕒" },
-];
+interface ReportSystemProps {
+  lat: number | null | undefined;
+  long: number | null | undefined;
+  onResetLocation: () => void;
+}
 
-function ReportSystem() {
+function ReportSystem({ lat, long, onResetLocation }: ReportSystemProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [alertSelection, setAlertSelection] = useState<Icon | null>(null);
-  const [lat, setLat] = useState("");
-  const [long, setLong] = useState("");
 
   const [submitted, setSubmitted] = useState(false);
 
   const handleFirstStep = (option: Icon) => {
     setAlertSelection(option);
+    onResetLocation();
     setStep(2);
   };
 
   //   TODO
   const handleGoToSummary = () => {
-    // Tutaj można dodać walidację, czy pola nie są puste
     if (!lat || !long) return;
     setStep(3);
   };
 
-  const handleSubmit = () => {
-    // console.log('Submitting:', { type: alertSelection?.id, lat, long });
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    if (lat && long && alertSelection) {
+      await api.createAlert(lat, long, alertSelection.id);
+      setSubmitted(true);
+      onResetLocation();
+    }
   };
 
   const handleReset = () => {
     setStep(1);
     setAlertSelection(null);
-    setLat("");
-    setLong("");
     setSubmitted(false);
   };
 
@@ -82,20 +89,7 @@ function ReportSystem() {
               <span>Gdzie to jest?</span>
             </div>
 
-            <input
-              type="text"
-              placeholder="Szerokość (Lat)"
-              value={lat}
-              onChange={(e) => setLat(e.target.value)}
-              className="border p-2 rounded text-sm w-full"
-            />
-            <input
-              type="text"
-              placeholder="Długość (Long)"
-              value={long}
-              onChange={(e) => setLong(e.target.value)}
-              className="border p-2 rounded text-sm w-full"
-            />
+            <p>Wybierz punkt na mapie</p>
 
             <div className="flex gap-2 mt-2">
               <button
@@ -170,4 +164,4 @@ function ReportSystem() {
   );
 }
 
-export { ReportSystem };
+export { ReportSystem, MapClickListener };

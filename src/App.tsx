@@ -3,15 +3,30 @@ import "leaflet/dist/leaflet.css";
 
 import Sidebar from "./components/sidebar";
 import Map from "./components/map";
+import { Markers } from "./components/map/marker";
 import type { StopGroup, Stop } from "./components/sidebar/types";
 import { api } from "./services/api";
 import { LocalStorageCache } from "./utils/cache";
-import { ReportSystem } from "./components/reportsystem";
+import { ReportSystem, MapClickListener } from "./components/reportsystem";
+import { Alerts } from "./components/map/alerts";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
   const [stops, setStops] = useState<Array<StopGroup>>([]);
   const [routeStops, setRouteStops] = useState<Array<Stop>>([]);
+  const [reportCoords, setReportCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setReportCoords({ lat, lng });
+    console.log("Saved:", lat, lng);
+  };
+
+  const resetReportCoords = () => {
+    setReportCoords(null);
+  };
 
   useEffect(() => {
     const darkMode = localStorage.getItem("theme") === "dark";
@@ -57,8 +72,17 @@ function App() {
         onShowRoute={handleShowRoute}
         routeStops={routeStops}
       />
-      <ReportSystem />
-      <Map stops={routeStops} />
+      <ReportSystem
+        lat={reportCoords?.lat}
+        long={reportCoords?.lng}
+        onResetLocation={resetReportCoords}
+      />
+
+      <Map stops={routeStops}>
+        <MapClickListener onLocationSelect={handleMapClick} />
+        {reportCoords && <Markers positions={[reportCoords]} isAlert={true} />}
+        <Alerts />
+      </Map>
     </div>
   );
 }

@@ -48,18 +48,40 @@ const IntermediateStopIcon = divIcon({
   popupAnchor: [0, -10],
 });
 
-type MarkerPosition = {
-  lat: number;
-  lng: number;
-};
+const AlertIcon = divIcon({
+  html: `
+    <div style="
+      width: 16px;
+      height: 16px;
+      background-color: red;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    "></div>
+  `,
+  className: "intermediate-stop-icon",
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -10],
+});
 
-const CustomMarkers = ({ positions }: { positions: MarkerPosition[] }) => {
+interface MarkersProps {
+  positions: { lat: number; lng: number }[];
+  isAlert: boolean;
+}
+
+const Markers = ({ positions, isAlert }: MarkersProps) => {
   return (
     <>
       {positions.map((position, index) => {
         const isFirst = index === 0;
         const isLast = index === positions.length - 1;
-        const icon = isFirst || isLast ? PinIcon : IntermediateStopIcon;
+
+        const icon = !isAlert
+          ? isFirst || isLast
+            ? PinIcon
+            : IntermediateStopIcon
+          : AlertIcon;
 
         return (
           <Marker
@@ -73,4 +95,4 @@ const CustomMarkers = ({ positions }: { positions: MarkerPosition[] }) => {
   );
 };
 
-export { CustomMarkers };
+export { Markers };
