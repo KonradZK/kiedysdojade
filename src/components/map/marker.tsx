@@ -88,7 +88,7 @@ const CustomMarkers = ({
         const isFirst = index === 0;
         const isLast = index === positions.length - 1;
 
-        if (isFirst || isLast) return null;
+        if (!isAlert && (isFirst || isLast)) return null;
 
         return (
           <Marker

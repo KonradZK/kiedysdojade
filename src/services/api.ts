@@ -33,11 +33,16 @@ export class API {
     }));
   }
 
-  async createAlert(lat: number, lng: number, type: string): Promise<void> {
+  async createAlert(
+    lat: number,
+    lng: number,
+    type: string,
+    line: string | null
+  ): Promise<void> {
     const payload = {
       lat: lat,
       lon: lng,
-      line: "3", // Default to 0 as we don't have line selection yet
+      line: line,
       category: type,
     };
     console.log(payload);
