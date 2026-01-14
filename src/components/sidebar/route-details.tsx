@@ -1,4 +1,4 @@
-import type { Stop, RouteProps, Line } from "./types";
+import type { Stop, RouteProps, LineInfo } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item";
 import { Label } from "../ui/label";
@@ -50,7 +50,7 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
               <ItemContent>
                 <ItemTitle>
                   <div className="flex items-center gap-2">
-                    {route.lines.map((line: Line, index: number) => (
+                    {route.lines.map((line: LineInfo, index: number) => (
                       <span
                         key={index}
                         className="bg-primary/10 text-primary rounded px-1.5 py-0.5 font-bold text-sm leading-none"
