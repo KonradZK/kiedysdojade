@@ -53,29 +53,10 @@ const createLabeledMarkerIcon = (label: string, color: string) =>
 const StartIcon = createLabeledMarkerIcon("Początek", "#22c55e"); // green-500
 const EndIcon = createLabeledMarkerIcon("Koniec", "#ef4444"); // red-500
 
-const AlertIcon = divIcon({
-  html: `
-    <div style="
-      width: 16px;
-      height: 16px;
-      background-color: red;
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    "></div>
-  `,
-  className: "intermediate-stop-icon",
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-  popupAnchor: [0, -10],
-});
-
 const CustomMarkers = ({
   stops,
-  isAlert,
 }: {
   stops?: Stop[];
-  isAlert: boolean;
 }) => {
   const safeStops = Array.isArray(stops) ? stops : [];
   return (
@@ -84,13 +65,13 @@ const CustomMarkers = ({
         const isFirst = index === 0;
         const isLast = index === safeStops.length - 1;
 
-        if (!isAlert && (isFirst || isLast)) return null;
+        if (isFirst || isLast) return null;
 
         return (
           <Marker
             key={`${stop.lat}-${stop.lon}-${index}`}
             position={{ lat: stop.lat, lng: stop.lon }}
-            icon={!isAlert ? IntermediateStopIcon : AlertIcon}
+            icon={IntermediateStopIcon}
           >
             <Popup>
               {stop.name}

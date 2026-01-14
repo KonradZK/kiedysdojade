@@ -1,14 +1,54 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
 
 interface SignupFormProps {
   onSwitchToLogin?: () => void;
+  onSuccess?: () => void;
 }
 
-export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
+export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
+  const { register } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    
+    if (password !== confirmPassword) {
+      setError("Hasła muszą być identyczne");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Hasło musi mieć co najmniej 8 znaków");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await register(email, password, name);
+      if (onSuccess) {
+          onSuccess();
+      }
+    } catch (err: any) {
+        // Safe check for error message
+        const msg = err?.message || "Rejestracja nie powiodła się";
+        setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 w-full">
-      <form className="flex flex-col gap-3">
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <Input
             id="name"
@@ -17,6 +57,8 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             autoComplete="off"
             className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl"
             required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -27,6 +69,8 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             autoComplete="off"
             className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
             Użyjemy tego do kontaktu. Nie będziemy dzielić się Twoim emailem.
@@ -39,6 +83,9 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             placeholder="Hasło"
             className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+
           />
           <p className="text-xs text-muted-foreground">
             Minimum 8 znaków.
@@ -51,10 +98,13 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             placeholder="Potwierdź Hasło"
             className="bg-secondary dark:bg-secondary focus-visible:h-12 transition-all duration-300 ease-in-out font-medium focus-visible:text-xl"
             required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
-        <Button type="submit" className="w-full mt-2">
-          Zarejestruj się
+        {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+        <Button type="submit" className="w-full mt-2" disabled={loading}>
+          {loading ? "Rejestracja..." : "Zarejestruj się"}
         </Button>
         <div className="text-center text-xs pt-2">
           Masz już konto?{" "}

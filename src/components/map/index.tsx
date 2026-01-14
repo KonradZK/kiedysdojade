@@ -103,7 +103,7 @@ const Map = ({
 
     return (
       <>
-        <CustomMarkers stops={stops} isAlert={false} />
+        <CustomMarkers stops={stops} />
         {linesToRender.length > 0 ? (
           linesToRender.map((line, idx) => {
             // Special handling for WALK segments: draw a straight dotted white line between start and end codes

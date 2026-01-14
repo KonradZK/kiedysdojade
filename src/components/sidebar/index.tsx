@@ -173,10 +173,16 @@ const Sidebar = ({
         />
 
         {authMode === "login" && (
-          <LoginForm onSwitchToSignup={() => setAuthMode("signup")} />
+          <LoginForm 
+            onSwitchToSignup={() => setAuthMode("signup")}
+            onSuccess={() => setAuthMode(null)} 
+          />
         )}
         {authMode === "signup" && (
-          <SignupForm onSwitchToLogin={() => setAuthMode("login")} />
+          <SignupForm 
+            onSwitchToLogin={() => setAuthMode("login")}
+            onSuccess={() => setAuthMode(null)}
+          />
         )}
 
         {!authMode && (
@@ -246,10 +252,16 @@ const Sidebar = ({
             />
 
             {authMode === "login" && (
-              <LoginForm onSwitchToSignup={() => setAuthMode("signup")} />
+              <LoginForm 
+                onSwitchToSignup={() => setAuthMode("signup")}
+                onSuccess={() => setAuthMode(null)}
+              />
             )}
             {authMode === "signup" && (
-              <SignupForm onSwitchToLogin={() => setAuthMode("login")} />
+              <SignupForm 
+                onSwitchToLogin={() => setAuthMode("login")}
+                onSuccess={() => setAuthMode(null)}
+              />
             )}
 
             {!authMode && (

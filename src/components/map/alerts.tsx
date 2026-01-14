@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "../../services/api";
 import { IconSet, type Alert } from "../reportsystem/types";
+import { useAuth } from "@/context/AuthContext";
 
 const getIconForCategory = (category: string) => {
   const iconData = IconSet.find((i) => i.id === category) || IconSet[0];
@@ -45,6 +46,7 @@ const TimeAgo = ({ since }: { since: string }) => {
 };
 
 function Alerts() {
+  const { isLoggedIn } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
@@ -116,6 +118,7 @@ function Alerts() {
                       size="icon"
                       className="h-6 w-6 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 rounded-full"
                       onClick={() => handleVote(alert.id, -1)}
+                      disabled={!isLoggedIn}
                     >
                       -
                     </Button>
@@ -124,6 +127,7 @@ function Alerts() {
                       size="icon"
                       className="h-6 w-6 hover:bg-green-100 hover:text-green-500 dark:hover:bg-green-900/30 rounded-full"
                       onClick={() => handleVote(alert.id, 1)}
+                      disabled={!isLoggedIn}
                     >
                       +
                     </Button>

@@ -159,6 +159,51 @@ export class API {
     this.routeInfoCache.set(routeId, data);
     return data;
   }
+  /**
+   * Login user
+   * Note: Using valid GET with query params as fetch does not support body in GET.
+   */
+  async login(email: string, password: string): Promise<{ token: string }> {
+    const payload = { email, password };
+    const response = await fetch(`/api/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Login failed: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  async register(email: string, password: string, username: string): Promise<void> {
+    const payload = { email, password, username };
+    const response = await fetch(`/api/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        // Try to parse error message if available
+        let errorMessage = response.statusText;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+                errorMessage = errorData.message;
+            }
+        } catch (e) {
+            // ignore
+        }
+      throw new Error(`Registration failed: ${errorMessage}`);
+    }
+  }
 }
+
 
 export const api = new API();
