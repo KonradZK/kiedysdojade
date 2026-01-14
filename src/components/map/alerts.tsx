@@ -1,76 +1,65 @@
 import { divIcon } from "leaflet";
 import { Marker, Popup } from "react-leaflet";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { api } from "../../services/api";
 import { IconSet, type Alert } from "../reportsystem/types";
 
-const createAlertIcon = (emoji: string) => {
+const getIconForCategory = (category: string) => {
+  const iconData = IconSet.find((i) => i.id === category) || IconSet[0];
   return divIcon({
-    html: `
-        <div style="
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          background: white;
-          border-radius: 50%;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          border: 2px solid #fff;
-        ">
-          ${emoji}
-        </div>
-      `,
-    className: "custom-alert-icon",
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -15],
+    className: "bg-transparent",
+    html: `<div class="w-8 h-8 flex items-center justify-center text-2xl drop-shadow-md filter cursor-pointer transition-transform hover:scale-110">${iconData.icon}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -10],
   });
 };
 
 const TimeAgo = ({ since }: { since: string }) => {
-  const [timeString, setTimeString] = useState("");
-  const timestamp = new Date(since).getTime();
+  const [label, setLabel] = useState("");
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = Date.now();
-      const diff = Math.floor((now - timestamp) / 60000); // minutes
+    const update = () => {
+      const now = new Date();
+      const past = new Date(since);
+      const diffMs = now.getTime() - past.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
 
-      if (diff < 1) {
-        setTimeString("przed chwilą");
-      } else if (diff < 60) {
-        setTimeString(`${diff} min temu`);
+      if (diffMins < 1) {
+        setLabel("przed chwilą");
+      } else if (diffMins < 60) {
+        setLabel(`${diffMins} min temu`);
       } else {
-        const hours = Math.floor(diff / 60);
-        setTimeString(`${hours} godz temu`);
+        const diffHours = Math.floor(diffMins / 60);
+        setLabel(`${diffHours} godz. temu`);
       }
     };
 
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
+    update();
+    const interval = setInterval(update, 60000); // Update every minute
     return () => clearInterval(interval);
-  }, [timestamp]);
+  }, [since]);
 
-  return <span className="text-xs text-gray-500">{timeString}</span>;
+  return <span className="text-[10px] text-muted-foreground">{label}</span>;
 };
 
 function Alerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-  const fetchAlerts = async () => {
-    try {
-      const data = await api.getAlerts();
-      setAlerts(data);
-    } catch (e) {
-      console.error("Failed to fetch alerts", e);
-    }
-  };
-
   useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const data = await api.getAlerts();
+        setAlerts(data);
+      } catch (error) {
+        console.error("Failed to fetch alerts:", error);
+      }
+    };
+
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 5000); // Poll every 5 seconds
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,59 +72,66 @@ function Alerts() {
     );
 
     await api.voteAlert(id, delta);
-    fetchAlerts(); // Re-fetch to ensure consistency
   };
 
   return (
     <>
       {alerts.map((alert) => {
-        const categoryData = IconSet.find((item) => item.id === alert.category);
-        const icon = categoryData ? categoryData.icon : "⚠️";
+        const iconData = IconSet.find((i) => i.id === alert.category);
+        const icon = iconData ? iconData.icon : "📍";
+        
         return (
           <Marker
             key={alert.id}
-            position={{ lat: alert.lat, lng: alert.lon }}
-            icon={createAlertIcon(icon)}
+            position={[alert.lat, alert.lon]}
+            icon={getIconForCategory(alert.category)}
           >
-            <Popup className="alert-popup">
-              <div className="flex flex-col gap-2 min-w-[150px]">
-                <div className="flex items-center gap-2 border-b pb-2">
-                  <span className="text-2xl">{icon}</span>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-sm">{alert.category}</span>
-                    <TimeAgo since={alert.since} />
+            <Popup
+              className="alert-popup [&_.leaflet-popup-content-wrapper]:!bg-card [&_.leaflet-popup-content-wrapper]:!text-card-foreground [&_.leaflet-popup-tip]:!bg-card [&_.leaflet-popup-close-button]:!text-muted-foreground [&_.leaflet-popup-close-button]:hover:!text-foreground [&_.leaflet-popup-content-wrapper]:!rounded-xl [&_.leaflet-popup-content-wrapper]:!p-0 [&_.leaflet-popup-content]:!m-0 [&_.leaflet-popup-content]:!w-auto"
+            >
+              <div className="flex flex-col gap-3 min-w-[200px] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 text-2xl shrink-0">
+                    {icon}
+                  </div>
+                  <div className="flex flex-col gap-1 w-full">
+                    <span className="font-semibold text-sm leading-none tracking-tight">
+                      {iconData?.label || alert.category}
+                    </span>
+                    {alert.line && (
+                      <span className="inline-flex items-center self-start rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80">
+                        Linia: {alert.line}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                  <span className="text-xs font-semibold text-gray-600">
-                    Ocena zgłoszenia:
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Ocena: {alert.score}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <button
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 rounded-full"
                       onClick={() => handleVote(alert.id, -1)}
-                      className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-red-500 transition-colors"
                     >
                       -
-                    </button>
-                    <span
-                      className={`font-bold ${
-                        alert.score > 0
-                          ? "text-green-600"
-                          : alert.score < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {alert.score}
-                    </span>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 hover:bg-green-100 hover:text-green-500 dark:hover:bg-green-900/30 rounded-full"
                       onClick={() => handleVote(alert.id, 1)}
-                      className="w-6 h-6 flex items-center justify-center rounded hover:bg-green-100 text-green-500 transition-colors"
                     >
                       +
-                    </button>
+                    </Button>
                   </div>
+                </div>
+
+                <div className="flex justify-end border-t border-border pt-2 mt-[-4px]">
+                  <TimeAgo since={alert.since} />
                 </div>
               </div>
             </Popup>

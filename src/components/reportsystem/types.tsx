@@ -16,7 +16,7 @@ export interface Alert {
   id: string;
   lat: number;
   lon: number;
-  line: string;
+  line: string | null;
   category: "inspector" | "malfunction" | "accident" | "delay";
   score: number;
   since: string;
