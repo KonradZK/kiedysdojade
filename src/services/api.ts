@@ -1,10 +1,76 @@
-import type { StopGroup, Path, TimeTable } from "../components/sidebar/types";
+import type { Alert } from "@/components/reportsystem/types";
+import type {
+  StopGroup,
+  Path,
+  TimeTable,
+  ShapePoint,
+} from "../components/sidebar/types";
 
 export class API {
-  private baseURL = "https://1732050.xyz/projekt";
+  private routeInfoCache = new Map<string, any>();
+
+  async getAlerts(): Promise<Alert[]> {
+    const response = await fetch(`/api/alerts`);
+    if (!response.ok) {
+      console.error("Failed to fetch alerts");
+      return [];
+    }
+    const data = await response.json();
+    if (data === null) {
+      return [];
+    }
+    // console.log(data);
+
+    return data.map((item: Alert) => ({
+      id: item.id,
+      lat: item.lat,
+      lon: item.lon,
+      line: item.line,
+      category: item.category,
+      score: item.score,
+      since: item.since,
+      remaning: item.remaning,
+    }));
+  }
+
+  async createAlert(
+    lat: number,
+    lng: number,
+    type: string,
+    line: string | null
+  ): Promise<void> {
+    const payload = {
+      lat: lat,
+      lon: lng,
+      line: line,
+      category: type,
+    };
+    console.log(payload);
+
+    const response = await fetch(`/api/alerts/new`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create alert: ${response.statusText}`);
+    }
+  }
+
+  async voteAlert(id: string, delta: number): Promise<void> {
+    const endpoint = delta > 0 ? "up" : "down";
+    const response = await fetch(`/api/alerts/${id}/${endpoint}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to vote on alert: ${response.statusText}`);
+    }
+  }
 
   async getStopGroups(): Promise<StopGroup[]> {
-    const response = await fetch(`${this.baseURL}/stops/groupnames`);
+    const response = await fetch(`/api/stops/groupnames`);
     if (!response.ok) {
       throw new Error(`Failed to fetch stop groups: ${response.statusText}`);
     }
@@ -15,11 +81,18 @@ export class API {
    * Fetch route between two stops
    * @param startCode - Starting stop code
    * @param endCode - Ending stop code
+   * @param departureTime - Optional departure time in HH:MM format
    */
-  async getAvailablePaths(startCode: string, endCode: string): Promise<Path[]> {
-    const response = await fetch(
-      `${this.baseURL}/path?start_code=${startCode}&end_code=${endCode}`
-    );
+  async getAvailablePaths(
+    startCode: string,
+    endCode: string,
+    departureTime?: string
+  ): Promise<Path[]> {
+    let url = `/api/path?start_code=${startCode}&end_code=${endCode}`;
+    if (departureTime) {
+      url += `&departure_time=${departureTime}`;
+    }
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch route: ${response.statusText}`);
     }
@@ -31,9 +104,7 @@ export class API {
    * @param stopCode - Stop code to fetch times for
    */
   async getTimeTable(stopCode: string): Promise<TimeTable> {
-    const response = await fetch(
-      `${this.baseURL}/stop_times/stop?stop=${stopCode}`
-    );
+    const response = await fetch(`/api/stop_times/stop?stop=${stopCode}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch stop times: ${response.statusText}`);
     }
@@ -46,13 +117,47 @@ export class API {
    * @param lon - Longitude
    */
   async getClosestStop(lat: number, lon: number): Promise<StopGroup> {
-    const response = await fetch(
-      `${this.baseURL}/stops/closest?lat=${lat}&lon=${lon}`
-    );
+    const response = await fetch(`/api/stops/closest?lat=${lat}&lon=${lon}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch closest stop: ${response.statusText}`);
     }
     return response.json();
+  }
+
+  /**
+   * Fetch intermediate shape points between two stops on a route
+   * @param routeId - Route ID (line number)
+   * @param startCode - Starting stop code
+   * @param endCode - Ending stop code
+   */
+  async getShapePoints(
+    routeId: string,
+    startCode: string,
+    endCode: string
+  ): Promise<ShapePoint[]> {
+    const response = await fetch(
+      `/api/shapes/${routeId}/between?start_code=${startCode}&end_code=${endCode}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch shape points: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Fetch route metadata (colors, names) with simple in-memory cache
+   */
+  async getRouteInfo(routeId: string): Promise<any> {
+    if (this.routeInfoCache.has(routeId)) {
+      return this.routeInfoCache.get(routeId);
+    }
+    const response = await fetch(`/api/routes/${routeId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch route info: ${response.statusText}`);
+    }
+    const data = await response.json();
+    this.routeInfoCache.set(routeId, data);
+    return data;
   }
 }
 

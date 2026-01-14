@@ -2,8 +2,8 @@ import { RouteSelection } from "./route-selection";
 import { SidebarHeader } from "./header";
 import RouteDetails from "./route-details";
 import AvailableRoutes from "./available-routes";
-import { LoginForm } from "../login-form";
-import { SignupForm } from "../signup-form";
+import { LoginForm } from "../login/login-form";
+import { SignupForm } from "../login/signup-form";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
@@ -11,13 +11,14 @@ import { ArrowLeft, ChevronUp } from "lucide-react";
 import { api } from "@/services/api";
 import { processRoutes } from "@/utils/route-processing";
 
-import type { Stop, StopGroup, RouteProps, Path } from "./types";
+import type { Stop, StopGroup, RouteProps, Path, LineInfo } from "./types";
 
 interface SidebarProps {
   isDark: boolean;
   stops: StopGroup[];
   toggleTheme: (value: boolean) => void;
-  onShowRoute: (route: Stop[]) => void;
+  onShowRoute: (route: Stop[], path: Path, lines: LineInfo[]) => void;
+  onStopSelect?: (start: StopGroup | null, end: StopGroup | null) => void;
   routeStops: Stop[];
 }
 
@@ -26,6 +27,7 @@ const Sidebar = ({
   toggleTheme,
   stops,
   onShowRoute,
+  onStopSelect,
   routeStops,
 }: SidebarProps) => {
   const [isRouteSelected, setIsRouteSelected] = useState(false);
@@ -36,21 +38,77 @@ const Sidebar = ({
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
 
   // Fetch and process available routes from API
-  const handleRouteSelect = async (start: string, end: string) => {
+  const handleRouteSelect = async (
+    start: string,
+    end: string,
+    departureTime?: string
+  ) => {
     setIsLoading(true);
     try {
-      const paths: Path[] = await api.getAvailablePaths(start, end);
+      const paths: Path[] = await api.getAvailablePaths(start, end, departureTime);
+      console.log("Fetched paths:", paths);
       setIsRouteSelected(true);
       setSelectedTripId(null);
-      
-      // Use first route's stops for map display
-      const firstRoute = paths[0];
-      const firstStops = firstRoute.map((rs) => rs.stop);
-      onShowRoute(firstStops);
-      
-      // Process routes using utility
-      const newRoutes = processRoutes(paths, firstStops);
-      setFetchedRoutes(newRoutes);
+
+      // Remove first and last stops (artificial group stops) from each path
+      const cleanedPaths = paths.map((path) => {
+        return path.slice(1, -1);
+      });
+
+      // Process routes using utility - each path becomes a separate route with line segments
+      const baseRoutes = processRoutes(cleanedPaths);
+
+      // Assign fixed palette colors and fetch shapes per line segment
+      const PALETTE = ["#22c55e", "#3b82f6", "#ef4444", "#8b5cf6", "#f59e0b"]; // green, blue, red, purple, yellow
+      const routesWithShapes: RouteProps[] = await Promise.all(
+        baseRoutes.map(async (route) => {
+          const enrichedLines: LineInfo[] = await Promise.all(
+            route.lines.map(async (line, idx) => {
+              // WALK segments: render dotted white, no API call
+              if (line.lineNumber === "WALK") {
+                return {
+                  ...line,
+                  colorHex: "#ffffff",
+                  textColorHex: "#0f172a", // ensure visible label in list
+                  shape: [], // Map will draw straight line between start/end
+                };
+              }
+              try {
+                const shape = await api.getShapePoints(
+                  line.lineNumber,
+                  line.startCode,
+                  line.endCode
+                );
+                return {
+                  ...line,
+                  colorHex: PALETTE[idx % PALETTE.length],
+                  textColorHex: undefined,
+                  shape,
+                };
+              } catch (e) {
+                console.error("Error fetching shape for line", line.lineNumber, e);
+                return {
+                  ...line,
+                  colorHex: PALETTE[idx % PALETTE.length],
+                  textColorHex: undefined,
+                  shape: [],
+                };
+              }
+            })
+          );
+
+          return { ...route, lines: enrichedLines };
+        })
+      );
+
+      setFetchedRoutes(routesWithShapes);
+
+      // Use first route for map display
+      if (routesWithShapes.length > 0) {
+        const firstRoute = routesWithShapes[0];
+        const firstStops = firstRoute.path.map((rs) => rs.stop);
+        onShowRoute(firstStops, firstRoute.path, firstRoute.lines);
+      }
     } catch (err) {
       console.error("Error fetching routes:", err);
     } finally {
@@ -61,8 +119,13 @@ const Sidebar = ({
   const handleStopSelect = async (stop_code: string) => {
     setSelectedTripId(stop_code);
     
-    // If it's a route ID (from search results), don't fetch stop times
+    // If it's a route ID (from search results), show this route on map
     if (stop_code.startsWith("route-")) {
+      const selectedRoute = fetchedRoutes.find((route) => route.id === stop_code);
+      if (selectedRoute) {
+        const stops = selectedRoute.path.map((e) => e.stop);
+        onShowRoute(stops, selectedRoute.path, selectedRoute.lines);
+      }
       return;
     }
 
@@ -75,8 +138,13 @@ const Sidebar = ({
     }
   };
 
-  const handleHoverRoute = (stops: Stop[]) => {
-    onShowRoute(stops);
+  const handleHoverRoute = (route: RouteProps | null) => {
+    if (!route) {
+      onShowRoute([], [], []);
+      return;
+    }
+    const stops = route.path.map((e) => e.stop);
+    onShowRoute(stops, route.path, route.lines);
   };
 
   const handleBack = () => {
@@ -84,7 +152,7 @@ const Sidebar = ({
       setSelectedTripId(null);
     } else if (isRouteSelected) {
       setIsRouteSelected(false);
-      onShowRoute([]);
+      onShowRoute([], [], []);
       setFetchedRoutes([]);
     }
   };
@@ -116,6 +184,7 @@ const Sidebar = ({
             <RouteSelection
               stops={stops}
               onSelect={handleRouteSelect}
+              onStopSelect={onStopSelect}
               disabled={isRouteSelected}
             />
 
@@ -191,6 +260,7 @@ const Sidebar = ({
                     handleRouteSelect(start, end);
                     setIsDrawerOpen(false);
                   }}
+                  onStopSelect={onStopSelect}
                   disabled={isRouteSelected}
                 />
 

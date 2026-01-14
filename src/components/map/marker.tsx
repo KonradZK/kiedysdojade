@@ -1,35 +1,6 @@
-import { Marker } from "react-leaflet";
+import { Marker, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
-
-const PinIcon = divIcon({
-  html: `
-    <div style="
-      background: linear-gradient(135deg, #333 0%, #000 100%);
-      width: 30px;
-      height: 30px;
-      border-radius: 50% 50% 50% 0; /* Creates a teardrop shape */
-      transform: rotate(-45deg);
-      border: 2px solid #fff; /* White border */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-      position: relative;
-    ">
-      <div style="
-        background: #fff;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        transform: rotate(45deg); /* Counter-rotate inner circle */
-      "></div>
-    </div>
-  `,
-  className: "sleek-marker-icon", // Keep a class for potential external CSS overrides
-  iconSize: [30, 40], // Adjust size for the teardrop
-  iconAnchor: [15, 40], // Anchor at the tip of the teardrop
-  popupAnchor: [0, -40], // Position popup above the tip
-});
+import type { Stop, StopGroup } from "../sidebar/types";
 
 const IntermediateStopIcon = divIcon({
   html: `
@@ -48,29 +19,114 @@ const IntermediateStopIcon = divIcon({
   popupAnchor: [0, -10],
 });
 
-type MarkerPosition = {
-  lat: number;
-  lng: number;
-};
+const createLabeledMarkerIcon = (label: string, color: string) =>
+  divIcon({
+    html: `
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="
+        background-color: ${color};
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 4px;
+      ">${label}</div>
+      <div style="
+        width: 24px;
+        height: 24px;
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      "></div>
+    </div>
+  `,
+    className: "labeled-marker-icon",
+    iconSize: [24, 24],
+    iconAnchor: [12, 36],
+    popupAnchor: [0, -36],
+  });
 
-const CustomMarkers = ({ positions }: { positions: MarkerPosition[] }) => {
+const StartIcon = createLabeledMarkerIcon("Początek", "#22c55e"); // green-500
+const EndIcon = createLabeledMarkerIcon("Koniec", "#ef4444"); // red-500
+
+const AlertIcon = divIcon({
+  html: `
+    <div style="
+      width: 16px;
+      height: 16px;
+      background-color: red;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    "></div>
+  `,
+  className: "intermediate-stop-icon",
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -10],
+});
+
+const CustomMarkers = ({
+  stops,
+  isAlert,
+}: {
+  stops?: Stop[];
+  isAlert: boolean;
+}) => {
+  const safeStops = Array.isArray(stops) ? stops : [];
   return (
     <>
-      {positions.map((position, index) => {
+      {safeStops.map((stop, index) => {
         const isFirst = index === 0;
-        const isLast = index === positions.length - 1;
-        const icon = isFirst || isLast ? PinIcon : IntermediateStopIcon;
+        const isLast = index === safeStops.length - 1;
+
+        if (!isAlert && (isFirst || isLast)) return null;
 
         return (
           <Marker
-            key={`${position.lat}-${position.lng}-${index}`}
-            position={position}
-            icon={icon}
-          />
+            key={`${stop.lat}-${stop.lon}-${index}`}
+            position={{ lat: stop.lat, lng: stop.lon }}
+            icon={!isAlert ? IntermediateStopIcon : AlertIcon}
+          >
+            <Popup>
+              {stop.name}
+            </Popup>
+          </Marker>
         );
       })}
     </>
   );
 };
 
-export { CustomMarkers };
+const SelectedStopMarkers = ({
+  selectedStart,
+  selectedEnd,
+}: {
+  selectedStart: StopGroup | null;
+  selectedEnd: StopGroup | null;
+}) => {
+  return (
+    <>
+      {selectedStart && (
+        <Marker
+          key={`start-${selectedStart.group_code}`}
+          position={[selectedStart.lat, selectedStart.lon]}
+          icon={StartIcon}
+        />
+      )}
+      {selectedEnd && (
+        <Marker
+          key={`end-${selectedEnd.group_code}`}
+          position={[selectedEnd.lat, selectedEnd.lon]}
+          icon={EndIcon}
+        />
+      )}
+    </>
+  );
+};
+
+export { CustomMarkers, SelectedStopMarkers };

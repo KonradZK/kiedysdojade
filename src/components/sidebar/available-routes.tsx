@@ -1,4 +1,5 @@
-import type { Stop, RouteProps, Line } from "./types";
+import React from "react";
+import type { RouteProps } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
@@ -7,14 +8,13 @@ import {
   ItemContent,
   ItemDescription,
   ItemTitle,
-  ItemActions,
 } from "../ui/item";
 import { Label } from "../ui/label";
 
 interface AvailableRoutesProps {
   routes: Array<RouteProps>;
   onSelect: (stop_code: string) => void;
-  onHoverRoute: (stops: Array<Stop>) => void;
+  onHoverRoute: (route: RouteProps | null) => void;
   isLoading?: boolean;
 }
 
@@ -24,7 +24,6 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
   onHoverRoute,
   isLoading = false,
 }) => {
-
   return (
     <div className="flex flex-col gap-2 h-full">
       <Card className="h-full border-0 shadow-none">
@@ -57,13 +56,13 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
                     className="cursor-pointer hover:bg-accent/50 transition-colors"
                     onClick={() => {
                       onSelect(route.id);
-                      onHoverRoute(route.stops || []);
+                      onHoverRoute(route);
                     }}
                     onMouseEnter={() => {
-                      onHoverRoute(route.stops || []);
+                      onHoverRoute(route);
                     }}
                     onMouseLeave={() => {
-                      onHoverRoute([]);
+                      onHoverRoute(null);
                     }}
                   >
                     {/* Left: Status & TimeToGo */}
@@ -85,15 +84,24 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
 
                     <ItemContent>
                       <ItemTitle>
-                        <div className="flex items-center gap-2">
-                          {route.lines.map((line: Line, index: number) => (
-                            <span
-                              key={index}
-                              className="bg-primary/10 text-primary rounded px-1.5 py-0.5 font-bold text-sm leading-none"
-                            >
-                              {line.lineNumber}
-                            </span>
-                          ))}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {route.lines.map((line, index) => {
+                            const color = line.colorHex;
+                            const textColor = line.textColorHex;
+                            const style: React.CSSProperties = {
+                              backgroundColor: color ? `${color}22` : undefined,
+                              color: textColor || color || undefined,
+                            };
+                            return (
+                              <span
+                                key={`${line.lineNumber}-${index}`}
+                                style={style}
+                                className="rounded px-1.5 py-0.5 font-bold text-sm leading-none border border-border"
+                              >
+                                {line.lineNumber}
+                              </span>
+                            );
+                          })}
                         </div>
                       </ItemTitle>
                       <ItemDescription>
@@ -110,12 +118,6 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
                         </span>
                       </ItemDescription>
                     </ItemContent>
-
-                    <ItemActions>
-                      <Label className="text-muted-foreground text-sm font-medium whitespace-nowrap">
-                        {route.routeTime} min
-                      </Label>
-                    </ItemActions>
                   </Item>
                 </li>
               ))
