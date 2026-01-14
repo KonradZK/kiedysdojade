@@ -195,7 +195,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
           autoComplete="off"
           step="60"
           disabled={disabled}
-          className="bg-secondary rounded-lg px-3 py-1 border border-border focus:outline-none focus-visible:outline-none text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+          className="bg-secondary dark:bg-secondary transition-all duration-300 ease-in-out rounded-lg px-3 py-1 border border-border focus:outline-none focus-visible:outline-none text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
           value={time}
           onChange={handleTimeChange}
         />

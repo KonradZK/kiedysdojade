@@ -103,9 +103,30 @@ const Map = ({
 
     return (
       <>
-        <CustomMarkers positions={defaultPositions} isAlert={false} />
+        <CustomMarkers stops={stops} isAlert={false} />
         {linesToRender.length > 0 ? (
           linesToRender.map((line, idx) => {
+            // Special handling for WALK segments: draw a straight dotted white line between start and end codes
+            if (line.lineNumber === "WALK") {
+              const start = stops.find((s) => s.code === line.startCode);
+              const end = stops.find((s) => s.code === line.endCode);
+              const walkPositions =
+                start && end
+                  ? [
+                      { lat: start.lat, lng: start.lon },
+                      { lat: end.lat, lng: end.lon },
+                    ]
+                  : [];
+              return (
+                <Polylines
+                  key={`${line.lineNumber}-${idx}`}
+                  positions={walkPositions.length > 0 ? walkPositions : defaultPositions}
+                  color="#ffffff"
+                  weight={3}
+                  dashArray="2 10"
+                />
+              );
+            }
             const positions =
               line.shape.length > 0
                 ? line.shape.map((p) => ({ lat: p.lat, lng: p.lon }))

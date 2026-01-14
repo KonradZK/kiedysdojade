@@ -1,6 +1,6 @@
-import { Marker } from "react-leaflet";
+import { Marker, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
-import type { StopGroup } from "../sidebar/types";
+import type { Stop, StopGroup } from "../sidebar/types";
 
 const IntermediateStopIcon = divIcon({
   html: `
@@ -70,32 +70,32 @@ const AlertIcon = divIcon({
   popupAnchor: [0, -10],
 });
 
-type MarkerPosition = {
-  lat: number;
-  lng: number;
-};
-
 const CustomMarkers = ({
-  positions,
+  stops,
   isAlert,
 }: {
-  positions: MarkerPosition[];
+  stops?: Stop[];
   isAlert: boolean;
 }) => {
+  const safeStops = Array.isArray(stops) ? stops : [];
   return (
     <>
-      {positions.map((position, index) => {
+      {safeStops.map((stop, index) => {
         const isFirst = index === 0;
-        const isLast = index === positions.length - 1;
+        const isLast = index === safeStops.length - 1;
 
         if (isFirst || isLast) return null;
 
         return (
           <Marker
-            key={`${position.lat}-${position.lng}-${index}`}
-            position={position}
+            key={`${stop.lat}-${stop.lon}-${index}`}
+            position={{ lat: stop.lat, lng: stop.lon }}
             icon={!isAlert ? IntermediateStopIcon : AlertIcon}
-          />
+          >
+            <Popup>
+              {stop.name}
+            </Popup>
+          </Marker>
         );
       })}
     </>

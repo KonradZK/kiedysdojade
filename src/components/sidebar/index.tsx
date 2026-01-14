@@ -64,6 +64,15 @@ const Sidebar = ({
         baseRoutes.map(async (route) => {
           const enrichedLines: LineInfo[] = await Promise.all(
             route.lines.map(async (line, idx) => {
+              // WALK segments: render dotted white, no API call
+              if (line.lineNumber === "WALK") {
+                return {
+                  ...line,
+                  colorHex: "#ffffff",
+                  textColorHex: "#0f172a", // ensure visible label in list
+                  shape: [], // Map will draw straight line between start/end
+                };
+              }
               try {
                 const shape = await api.getShapePoints(
                   line.lineNumber,

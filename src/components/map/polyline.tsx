@@ -4,9 +4,10 @@ type PolylineProps = {
   positions: { lat: number; lng: number }[];
   color?: string;
   weight?: number;
+  dashArray?: string;
 };
 
-function Polylines({ positions, color = "#3388ff", weight = 5 }: PolylineProps) {
+function Polylines({ positions, color = "#3388ff", weight = 5, dashArray }: PolylineProps) {
   return (
     <Polyline
       pathOptions={{
@@ -15,6 +16,7 @@ function Polylines({ positions, color = "#3388ff", weight = 5 }: PolylineProps) 
         opacity: 0.8,
         lineCap: "round",
         lineJoin: "round",
+        dashArray,
       }}
       positions={positions}
     />
