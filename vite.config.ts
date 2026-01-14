@@ -13,10 +13,16 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://1732050.xyz",
+        target: "https://kiedysdojade.projektstudencki.pl",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, "/projekt"),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.url === '/api/login' && req.method === 'POST') {
+              proxyReq.method = 'GET';
+            }
+          });
+        },
       },
     },
   },

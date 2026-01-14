@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "../../services/api";
 import { IconSet, type Icon } from "./types";
+import { useAuth } from "@/context/AuthContext";
 
 const MapClickListener = ({
   onLocationSelect,
@@ -25,6 +26,7 @@ interface ReportSystemProps {
 }
 
 function ReportSystem({ lat, long, onResetLocation }: ReportSystemProps) {
+  const { isLoggedIn } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [alertSelection, setAlertSelection] = useState<Icon | null>(null);
@@ -63,32 +65,36 @@ function ReportSystem({ lat, long, onResetLocation }: ReportSystemProps) {
   };
 
   return (
-    // Zmieniłem h-20 na h-auto i dodałem p-4, żeby treść się zmieściła
-    <Card className="absolute h-auto min-h-[200px] w-64 z-50 right-10 bottom-10 shadow-xl flex flex-col items-center justify-center text-center animate-in slide-in-from-bottom-5">
-      <CardContent className="p-4 w-full flex flex-col items-center">
-      {/* Nagłówek (tylko jeśli nie wysłano sukcesu) */}
+    <Card className="absolute h-auto w-64 z-50 right-10 bottom-10 shadow-xl flex flex-col items-center justify-center text-center animate-in slide-in-from-bottom-5">
+      <CardContent className="p-3 w-full flex flex-col items-center">
       {!submitted && (
-        <h1 className="text-lg font-bold mb-4">Zgłoś problem</h1>
+        <h1 className="text-lg font-bold mb-2">Zgłoś problem</h1>
       )}
 
       <div className="w-full">
         {/* --- STEP 1: WYBÓR IKONY --- */}
         {step === 1 && (
-          <div className="grid grid-cols-2 gap-2 w-full">
-            {IconSet.map((item) => (
-              <Button
-                key={item.id}
-                variant="outline"
-                className="h-20 flex flex-col gap-1"
-                onClick={() => handleFirstStep(item)}
-              >
-                <span className="text-2xl">{item.icon}</span>
-                <span className="text-xs font-medium">
-                  {item.label}
-                </span>
-              </Button>
-            ))}
-          </div>
+          isLoggedIn ? (
+            <div className="grid grid-cols-2 gap-2 w-full">
+              {IconSet.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  className="h-20 flex flex-col gap-1"
+                  onClick={() => handleFirstStep(item)}
+                >
+                  <span className="text-2xl">{item.icon}</span>
+                  <span className="text-xs font-medium">
+                    {item.label}
+                  </span>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-muted-foreground mb-2">Musisz być zalogowany, aby dodawać zgłoszenia.</p>
+            </div>
+          )
         )}
 
         {/* --- STEP 2: LOKALIZACJA --- */}

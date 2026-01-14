@@ -13,7 +13,9 @@ import { api } from "./services/api";
 import { LocalStorageCache } from "./utils/cache";
 import { ReportSystem, MapClickListener } from "./components/reportsystem";
 import { Alerts } from "./components/map/alerts";
-import { CustomMarkers } from "./components/map/marker";
+import { PointMarker } from "./components/map/pointmarker";
+
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -83,34 +85,36 @@ function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-background text-foreground transition-all duration-300 ease-in-out">
-      <Sidebar
-        isDark={isDark}
-        toggleTheme={toggleTheme}
-        stops={stops}
-        onShowRoute={handleShowRoute}
-        onStopSelect={handleStopSelect}
-        routeStops={routeStops}
-      />
-      <ReportSystem
-        lat={reportCoords?.lat}
-        long={reportCoords?.lng}
-        onResetLocation={resetReportCoords}
-      />
+    <AuthProvider>
+      <div className="relative w-screen h-screen overflow-hidden bg-background text-foreground transition-all duration-300 ease-in-out">
+        <Sidebar
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+          stops={stops}
+          onShowRoute={handleShowRoute}
+          onStopSelect={handleStopSelect}
+          routeStops={routeStops}
+        />
+        <ReportSystem
+          lat={reportCoords?.lat}
+          long={reportCoords?.lng}
+          onResetLocation={resetReportCoords}
+        />
 
-      <Map
-        stops={routeStops}
-        lines={routeLines}
-        selectedStart={selectedStart}
-        selectedEnd={selectedEnd}
-      >
-        <MapClickListener onLocationSelect={handleMapClick} />
-        {reportCoords && (
-          <CustomMarkers positions={[reportCoords]} isAlert={true} />
-        )}
-        <Alerts />
-      </Map>
-    </div>
+        <Map
+          stops={routeStops}
+          lines={routeLines}
+          selectedStart={selectedStart}
+          selectedEnd={selectedEnd}
+        >
+          <MapClickListener onLocationSelect={handleMapClick} />
+          {reportCoords && (
+            <PointMarker position={reportCoords} />
+          )}
+          <Alerts />
+        </Map>
+      </div>
+    </AuthProvider>
   );
 }
 
