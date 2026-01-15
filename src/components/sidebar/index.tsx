@@ -44,11 +44,11 @@ const Sidebar = ({
     departureTime?: string
   ) => {
     setIsLoading(true);
+    setIsRouteSelected(true);
+    setSelectedTripId(null);
     try {
       const paths: Path[] = await api.getAvailablePaths(start, end, departureTime);
       console.log("Fetched paths:", paths);
-      setIsRouteSelected(true);
-      setSelectedTripId(null);
 
       // Remove first and last stops (artificial group stops) from each path
       const cleanedPaths = paths.map((path) => {

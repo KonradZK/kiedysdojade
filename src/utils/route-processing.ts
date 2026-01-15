@@ -89,8 +89,8 @@ export function processRoutes(
 
     routes.push({
       id: `route-${pathIdx}-${Date.now()}`,
-      status: "Odjazd za",
-      timeToGo: diffMins.toString(),
+      status: diffMins >= 100 ? "Odjazd o" : "Odjazd za",
+      timeToGo: diffMins >= 100 ? depTime : diffMins.toString(),
       lines: segments,
       departureTime: depTime,
       arriveTime: arrTime,
