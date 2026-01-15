@@ -16,13 +16,6 @@ export default defineConfig({
         target: "https://kiedysdojade.projektstudencki.pl",
         changeOrigin: true,
         secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            if (req.url === '/api/login' && req.method === 'POST') {
-              proxyReq.method = 'GET';
-            }
-          });
-        },
       },
     },
   },

@@ -45,7 +45,7 @@ const TimeAgo = ({ since }: { since: string }) => {
   return <span className="text-[10px] text-muted-foreground">{label}</span>;
 };
 
-function Alerts() {
+function Alerts({ refreshKey }: { refreshKey?: number }) {
   const { isLoggedIn } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
@@ -63,7 +63,7 @@ function Alerts() {
     // Poll for updates every 30 seconds
     const interval = setInterval(fetchAlerts, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshKey]);
 
   const handleVote = async (id: string, delta: number) => {
     // Optimistic update

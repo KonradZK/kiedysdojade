@@ -29,6 +29,8 @@ function App() {
     lat: number;
     lng: number;
   } | null>(null);
+  const [reportStep, setReportStep] = useState<1 | 2 | 3 | 4>(1);
+  const [alertsRefreshKey, setAlertsRefreshKey] = useState(0);
 
   const handleMapClick = (lat: number, lng: number) => {
     setReportCoords({ lat, lng });
@@ -37,6 +39,10 @@ function App() {
 
   const resetReportCoords = () => {
     setReportCoords(null);
+  };
+
+  const handleAlertAdded = () => {
+    setAlertsRefreshKey((prev) => prev + 1);
   };
 
   useEffect(() => {
@@ -99,6 +105,9 @@ function App() {
           lat={reportCoords?.lat}
           long={reportCoords?.lng}
           onResetLocation={resetReportCoords}
+          onAlertAdded={handleAlertAdded}
+          step={reportStep}
+          onStepChange={setReportStep}
         />
 
         <Map
@@ -107,11 +116,11 @@ function App() {
           selectedStart={selectedStart}
           selectedEnd={selectedEnd}
         >
-          <MapClickListener onLocationSelect={handleMapClick} />
-          {reportCoords && (
+          {reportStep === 2 && <MapClickListener onLocationSelect={handleMapClick} />}
+          {reportCoords && reportStep >= 2 && (
             <PointMarker position={reportCoords} />
           )}
-          <Alerts />
+          <Alerts refreshKey={alertsRefreshKey} />
         </Map>
       </div>
     </AuthProvider>
