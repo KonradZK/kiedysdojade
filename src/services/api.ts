@@ -37,8 +37,9 @@ export class API {
     lat: number,
     lng: number,
     type: string,
-    line: string | null
-  ): Promise<void> {
+    line: string | null,
+    token: string
+  ): Promise<{ new_token: string }> {
     const payload = {
       lat: lat,
       lon: lng,
@@ -51,6 +52,7 @@ export class API {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: token,
       },
       body: JSON.stringify(payload),
     });
@@ -58,15 +60,24 @@ export class API {
     if (!response.ok) {
       throw new Error(`Failed to create alert: ${response.statusText}`);
     }
+
+    return response.json();
   }
 
-  async voteAlert(id: string, delta: number): Promise<void> {
+  async voteAlert(id: string, delta: number, token: string): Promise<{ new_token: string }> {
     const endpoint = delta > 0 ? "up" : "down";
-    const response = await fetch(`/api/alerts/${id}/${endpoint}`);
+    const response = await fetch(`/api/alerts/${id}/${endpoint}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to vote on alert: ${response.statusText}`);
     }
+    return response.json();
   }
 
   async getStopGroups(): Promise<StopGroup[]> {
@@ -179,7 +190,11 @@ export class API {
     return response.json();
   }
 
-  async register(email: string, password: string, username: string): Promise<void> {
+  async register(
+    email: string,
+    password: string,
+    username: string
+  ): Promise<void> {
     const payload = { email, password, username };
     const response = await fetch(`/api/register`, {
       method: "POST",
@@ -190,20 +205,19 @@ export class API {
     });
 
     if (!response.ok) {
-        // Try to parse error message if available
-        let errorMessage = response.statusText;
-        try {
-            const errorData = await response.json();
-            if (errorData && errorData.message) {
-                errorMessage = errorData.message;
-            }
-        } catch (e) {
-            // ignore
+      // Try to parse error message if available
+      let errorMessage = response.statusText;
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
         }
+      } catch (e) {
+        // ignore
+      }
       throw new Error(`Registration failed: ${errorMessage}`);
     }
   }
 }
-
 
 export const api = new API();
