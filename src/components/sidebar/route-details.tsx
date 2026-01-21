@@ -80,7 +80,7 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
       )}
 {/* przystanki */}
       <div className="flex-1 overflow-y-auto pr-2">
-        <ScrollArea className="h-66">
+        <ScrollArea className="h-60">
         <ul className="relative border-l border-gray-300 dark:border-gray-600 pl-6 ml-3">
           {routeStops.map((stop, i) => (
             <li key={i} className="mb-6 relative last:mb-0">
@@ -96,7 +96,7 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">{stop.name}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{stop.code}</span>
+                {/* <span className="text-xs text-muted-foreground">{stop.code}</span> */}
               </div>
             </li>
           ))}

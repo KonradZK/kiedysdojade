@@ -46,7 +46,7 @@ const TimeAgo = ({ since }: { since: string }) => {
 };
 
 function Alerts({ refreshKey }: { refreshKey?: number }) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, token, updateToken } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
@@ -66,6 +66,8 @@ function Alerts({ refreshKey }: { refreshKey?: number }) {
   }, [refreshKey]);
 
   const handleVote = async (id: string, delta: number) => {
+    if (!token) return;
+
     // Optimistic update
     setAlerts((prev) =>
       prev.map((alert) =>
@@ -73,7 +75,12 @@ function Alerts({ refreshKey }: { refreshKey?: number }) {
       )
     );
 
-    await api.voteAlert(id, delta);
+    try {
+      const { new_token: newToken } = await api.voteAlert(id, delta, token);
+      updateToken(newToken);
+    } catch (error) {
+      console.error("Failed to vote:", error);
+    }
   };
 
   return (
@@ -112,7 +119,8 @@ function Alerts({ refreshKey }: { refreshKey?: number }) {
                   <span className="text-xs font-medium text-muted-foreground">
                     Ocena: {alert.score}
                   </span>
-                  <div className="flex items-center gap-1">
+                  {token && (
+                    <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -132,6 +140,7 @@ function Alerts({ refreshKey }: { refreshKey?: number }) {
                       +
                     </Button>
                   </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end border-t border-border pt-2 mt-[-4px]">
