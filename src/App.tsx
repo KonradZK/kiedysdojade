@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-
 import Sidebar from "./components/sidebar";
 import Map from "./components/map";
 import type {
@@ -21,7 +20,6 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [stops, setStops] = useState<Array<StopGroup>>([]);
   const [routeStops, setRouteStops] = useState<Array<Stop>>([]);
-  // routePath can be derived when needed from selected route; omitted from state to reduce redundancy
   const [selectedStart, setSelectedStart] = useState<StopGroup | null>(null);
   const [selectedEnd, setSelectedEnd] = useState<StopGroup | null>(null);
   const [routeLines, setRouteLines] = useState<Array<LineInfo>>([]);
@@ -34,7 +32,6 @@ function App() {
 
   const handleMapClick = (lat: number, lng: number) => {
     setReportCoords({ lat, lng });
-    console.log("Saved:", lat, lng);
   };
 
   const resetReportCoords = () => {
@@ -54,7 +51,6 @@ function App() {
     if (cachedStops) {
       setStops(cachedStops);
     } else {
-      console.log("No cached stops found, fetching...");
       fetchStops();
     }
   }, []);
@@ -62,11 +58,10 @@ function App() {
   const fetchStops = async () => {
     try {
       const data = await api.getStopGroups();
-      console.log("Fetched stops:", data);
       setStops(data);
       LocalStorageCache.set("stops", data);
-    } catch (err) {
-      console.error("Error fetching stops:", err);
+    } catch (error) {
+      console.error("Error fetching stops:", error);
     }
   };
 

@@ -10,6 +10,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
 import { ArrowLeft, ChevronUp } from "lucide-react";
 import { api } from "@/services/api";
 import { processRoutes } from "@/utils/route-processing";
+import { useRouteTimer } from "@/hooks/useRouteTimer";
 
 import type { Stop, StopGroup, RouteProps, Path, LineInfo } from "./types";
 
@@ -34,81 +35,27 @@ const Sidebar = ({
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [fetchedRoutes, setFetchedRoutes] = useState<RouteProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
+  const [currentStart, setCurrentStart] = useState<string>("");
+  const [currentEnd, setCurrentEnd] = useState<string>("");
+  const [nextDepartureTime, setNextDepartureTime] = useState<string | undefined>(undefined);
 
-  // Fetch and process available routes from API
   const handleRouteSelect = async (
     start: string,
     end: string,
     departureTime?: string
   ) => {
-    setIsLoading(true);
     setIsRouteSelected(true);
     setSelectedTripId(null);
+    setCurrentStart(start);
+    setCurrentEnd(end);
+    setFetchedRoutes([]);
+    setIsLoading(true);
+    
     try {
-      const paths: Path[] = await api.getAvailablePaths(start, end, departureTime);
-      console.log("Fetched paths:", paths);
-
-      // Remove first and last stops (artificial group stops) from each path
-      const cleanedPaths = paths.map((path) => {
-        return path.slice(1, -1);
-      });
-
-      // Process routes using utility - each path becomes a separate route with line segments
-      const baseRoutes = processRoutes(cleanedPaths);
-
-      // Assign fixed palette colors and fetch shapes per line segment
-      const PALETTE = ["#22c55e", "#3b82f6", "#ef4444", "#8b5cf6", "#f59e0b"]; // green, blue, red, purple, yellow
-      const routesWithShapes: RouteProps[] = await Promise.all(
-        baseRoutes.map(async (route) => {
-          const enrichedLines: LineInfo[] = await Promise.all(
-            route.lines.map(async (line, idx) => {
-              // WALK segments: render dotted white, no API call
-              if (line.lineNumber === "WALK") {
-                return {
-                  ...line,
-                  colorHex: "#ffffff",
-                  textColorHex: "#0f172a", // ensure visible label in list
-                  shape: [], // Map will draw straight line between start/end
-                };
-              }
-              try {
-                const shape = await api.getShapePoints(
-                  line.lineNumber,
-                  line.startCode,
-                  line.endCode
-                );
-                return {
-                  ...line,
-                  colorHex: PALETTE[idx % PALETTE.length],
-                  textColorHex: undefined,
-                  shape,
-                };
-              } catch (e) {
-                console.error("Error fetching shape for line", line.lineNumber, e);
-                return {
-                  ...line,
-                  colorHex: PALETTE[idx % PALETTE.length],
-                  textColorHex: undefined,
-                  shape: [],
-                };
-              }
-            })
-          );
-
-          return { ...route, lines: enrichedLines };
-        })
-      );
-
-      setFetchedRoutes(routesWithShapes);
-
-      // Use first route for map display
-      if (routesWithShapes.length > 0) {
-        const firstRoute = routesWithShapes[0];
-        const firstStops = firstRoute.path.map((rs) => rs.stop);
-        onShowRoute(firstStops, firstRoute.path, firstRoute.lines);
-      }
+      await fetchRoutesSequentially(start, end, departureTime, 5, true);
     } catch (err) {
       console.error("Error fetching routes:", err);
     } finally {
@@ -116,10 +63,119 @@ const Sidebar = ({
     }
   };
 
+  const fetchRoutesSequentially = async (
+    start: string,
+    end: string,
+    departureTime: string | undefined,
+    count: number,
+    reset: boolean = false
+  ) => {
+    const PALETTE = ["#22c55e", "#3b82f6", "#ef4444", "#8b5cf6", "#f59e0b"];
+    let currentDepartureTime = departureTime;
+    let isFirstRoute = true;
+
+    if (reset) {
+      setFetchedRoutes([]);
+    }
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const paths: Path[] = await api.getAvailablePaths(
+          start,
+          end,
+          currentDepartureTime,
+          1
+        );
+        
+        if (paths.length === 0) break;
+
+        const cleanedPaths = paths.map((path) => path.slice(1, -1));
+
+        const baseRoutes = processRoutes(cleanedPaths);
+
+        if (baseRoutes.length === 0) break;
+
+        const routesWithShapes: RouteProps[] = await Promise.all(
+          baseRoutes.map(async (route) => {
+            const enrichedLines: LineInfo[] = await Promise.all(
+              route.lines.map(async (line, idx) => {
+                if (line.lineNumber === "WALK") {
+                  return {
+                    ...line,
+                    colorHex: "#ffffff",
+                    textColorHex: "#0f172a",
+                    shape: [],
+                  };
+                }
+                try {
+                  const shape = await api.getShapePoints(
+                    line.lineNumber,
+                    line.startCode,
+                    line.endCode
+                  );
+                  return {
+                    ...line,
+                    colorHex: PALETTE[idx % PALETTE.length],
+                    textColorHex: undefined,
+                    shape,
+                  };
+                } catch (e) {
+                  console.error("Error fetching shape for line", line.lineNumber, e);
+                  return {
+                    ...line,
+                    colorHex: PALETTE[idx % PALETTE.length],
+                    textColorHex: undefined,
+                    shape: [],
+                  };
+                }
+              })
+            );
+
+            return { ...route, lines: enrichedLines };
+          })
+        );
+
+        setFetchedRoutes((prev) => [...prev, ...routesWithShapes]);
+
+        if (reset && isFirstRoute && routesWithShapes.length > 0) {
+          const firstRoute = routesWithShapes[0];
+          const firstStops = firstRoute.path.map((rs) => rs.stop);
+          onShowRoute(firstStops, firstRoute.path, firstRoute.lines);
+          isFirstRoute = false;
+        }
+
+        const currentRoute = routesWithShapes[0];
+        const [hour, minute] = currentRoute.departureTime.split(":").map(Number);
+        const nextMinute = minute + 1;
+        const nextHour = nextMinute >= 60 ? (hour + 1) % 24 : hour;
+        const adjustedMinute = nextMinute >= 60 ? 0 : nextMinute;
+        currentDepartureTime = `${String(nextHour).padStart(2, "0")}:${String(adjustedMinute).padStart(2, "0")}`;
+
+      } catch (err) {
+        console.error(`Error fetching route ${i + 1}:`, err);
+        break;
+      }
+    }
+
+    setNextDepartureTime(currentDepartureTime);
+  };
+
+  const handleLoadMore = async () => {
+    if (!currentStart || !currentEnd) return;
+    
+    setIsLoadingMore(true);
+    try {
+      await fetchRoutesSequentially(currentStart, currentEnd, nextDepartureTime, 5, false);
+    } catch (err) {
+      console.error("Error loading more routes:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   const handleStopSelect = async (stop_code: string) => {
     setSelectedTripId(stop_code);
     
-    // If it's a route ID (from search results), show this route on map
     if (stop_code.startsWith("route-")) {
       const selectedRoute = fetchedRoutes.find((route) => route.id === stop_code);
       if (selectedRoute) {
@@ -129,10 +185,8 @@ const Sidebar = ({
       return;
     }
 
-    // Fetch stop times for this stop
     try {
-      const data = await api.getTimeTable(stop_code);
-      console.log("Stop times:", data);
+      await api.getTimeTable(stop_code);
     } catch (e) {
       console.error("Error fetching stop times:", e);
     }
@@ -154,12 +208,13 @@ const Sidebar = ({
       setIsRouteSelected(false);
       onShowRoute([], [], []);
       setFetchedRoutes([]);
+      setCurrentStart("");
+      setCurrentEnd("");
+      setNextDepartureTime(undefined);
     }
   };
 
-  const selectedRoute = fetchedRoutes.find(
-    (route) => route.id === selectedTripId
-  );
+  const updatedRoutes = useRouteTimer(fetchedRoutes);
 
   return (
     <>
@@ -214,15 +269,17 @@ const Sidebar = ({
               <div className="flex-1 overflow-hidden flex flex-col">
                 {!selectedTripId ? (
                   <AvailableRoutes
-                    routes={fetchedRoutes}
+                    routes={updatedRoutes}
                     onSelect={handleStopSelect}
                     onHoverRoute={handleHoverRoute}
                     isLoading={isLoading}
+                    onLoadMore={handleLoadMore}
+                    isLoadingMore={isLoadingMore}
                   />
                 ) : (
                   <RouteDetails
                     routeStops={routeStops}
-                    route={selectedRoute}
+                    route={updatedRoutes.find((r) => r.id === selectedTripId)}
                   />
                 )}
               </div>
@@ -296,15 +353,17 @@ const Sidebar = ({
                   <div className="flex-1 overflow-hidden flex flex-col">
                     {!selectedTripId ? (
                       <AvailableRoutes
-                        routes={fetchedRoutes}
+                        routes={updatedRoutes}
                         onSelect={handleStopSelect}
                         onHoverRoute={handleHoverRoute}
                         isLoading={isLoading}
+                        onLoadMore={handleLoadMore}
+                        isLoadingMore={isLoadingMore}
                       />
                     ) : (
                       <RouteDetails
                         routeStops={routeStops}
-                        route={selectedRoute}
+                        route={updatedRoutes.find((r) => r.id === selectedTripId)}
                       />
                     )}
                   </div>
