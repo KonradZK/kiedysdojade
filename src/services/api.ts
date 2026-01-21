@@ -19,7 +19,6 @@ export class API {
     if (data === null) {
       return [];
     }
-    // console.log(data);
 
     return data.map((item: Alert) => ({
       id: item.id,
@@ -46,7 +45,6 @@ export class API {
       line: line,
       category: type,
     };
-    console.log(payload);
 
     const response = await fetch(`/api/alerts/new`, {
       method: "POST",
@@ -93,13 +91,15 @@ export class API {
    * @param startCode - Starting stop code
    * @param endCode - Ending stop code
    * @param departureTime - Optional departure time in HH:MM format
+   * @param limit - Number of routes to return (default: 5)
    */
   async getAvailablePaths(
     startCode: string,
     endCode: string,
-    departureTime?: string
+    departureTime?: string,
+    limit: number = 1
   ): Promise<Path[]> {
-    let url = `/api/path?start_code=${startCode}&end_code=${endCode}`;
+    let url = `/api/path?start_code=${startCode}&end_code=${endCode}&limit=${limit}`;
     if (departureTime) {
       url += `&departure_time=${departureTime}`;
     }

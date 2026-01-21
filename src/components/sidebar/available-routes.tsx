@@ -3,6 +3,7 @@ import type { RouteProps } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
+import { Button } from "../ui/button";
 import {
   Item,
   ItemContent,
@@ -10,12 +11,15 @@ import {
   ItemTitle,
 } from "../ui/item";
 import { Label } from "../ui/label";
+import { Clock, Footprints } from "lucide-react";
 
 interface AvailableRoutesProps {
   routes: Array<RouteProps>;
   onSelect: (stop_code: string) => void;
   onHoverRoute: (route: RouteProps | null) => void;
   isLoading?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
@@ -23,6 +27,8 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
   onSelect,
   onHoverRoute,
   isLoading = false,
+  onLoadMore,
+  isLoadingMore = false,
 }) => {
   return (
     <div className="flex flex-col gap-2 h-full">
@@ -30,7 +36,7 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
         <CardContent className="p-0 h-full">
           <ScrollArea className="h-96 pr-4">
             <ul className="flex flex-col gap-2 pb-4">
-              {isLoading ? (
+              {isLoading && routes.length === 0 ? (
                   Array.from({ length: 5 }).map((_, idx) => (
                     <li key={idx}>
                       <Card className="border-0 shadow-none">
@@ -88,6 +94,19 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
                           {route.lines.map((line, index) => {
                             const color = line.colorHex;
                             const textColor = line.textColorHex;
+                            
+                            if (line.lineNumber === "WALK") {
+                              return (
+                                <div
+                                  key={`${line.lineNumber}-${index}`}
+                                  className="rounded px-1.5 py-0.5 font-bold text-sm leading-none border border-border flex items-center gap-1"
+                                  title="Przejście pieszo"
+                                >
+                                  <Footprints className="w-4 h-4" />
+                                </div>
+                              );
+                            }
+                            
                             const style: React.CSSProperties = {
                               backgroundColor: color ? `${color}22` : undefined,
                               color: textColor || color || undefined,
@@ -123,6 +142,21 @@ const AvailableRoutes: React.FC<AvailableRoutesProps> = ({
               ))
               )}
             </ul>
+            
+            {/* Load More Button */}
+            {!isLoading && routes.length > 0 && onLoadMore && (
+              <div className="mt-4">
+                <Button
+                  onClick={onLoadMore}
+                  disabled={isLoadingMore}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  {isLoadingMore ? "Ładowanie..." : "Wyświetl późniejsze odjazdy"}
+                </Button>
+              </div>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>

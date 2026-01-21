@@ -87,6 +87,12 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
       e.preventDefault();
     } else if (e.key === "Enter" && selectedIndex >= 0) {
       const selected = suggestions[selectedIndex];
+      if (focused === "start" && selected.group_code === selectedEnd?.group_code) {
+        return; // Don't allow same stop
+      }
+      if (focused === "end" && selected.group_code === selectedStart?.group_code) {
+        return; // Don't allow same stop
+      }
       setInputValue(selected.group_name);
       setHoveredName("");
       setSelectedIndex(-1);
@@ -119,7 +125,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
         selectedIndex >= 0
           ? startSuggestions[selectedIndex]
           : startSuggestions[0];
-      if (selected) {
+      if (selected && selected.group_code !== selectedEnd?.group_code) {
         setStartInput(selected.group_name);
         setSelectedStart(selected);
         onStopSelect?.(selected, selectedEnd);
@@ -127,7 +133,7 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
     } else if (type === "end") {
       const selected =
         selectedIndex >= 0 ? endSuggestions[selectedIndex] : endSuggestions[0];
-      if (selected) {
+      if (selected && selected.group_code !== selectedStart?.group_code) {
         setEndInput(selected.group_name);
         setSelectedEnd(selected);
         onStopSelect?.(selectedStart, selected);
@@ -204,10 +210,11 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
       <Button
         ref={searchButtonRef}
         variant="outline"
-        disabled={disabled || !selectedStart || !selectedEnd}
+        disabled={disabled || !selectedStart || !selectedEnd || selectedStart.group_code === selectedEnd.group_code}
+        title={selectedStart && selectedEnd && selectedStart.group_code === selectedEnd.group_code ? "Przystanki muszą być różne" : ""}
         className="bg-secondary mt-3 hover:scale-102 hover:cursor-pointer transition-all duration-300 ease-in-out text-md font-bold"
         onClick={() => {
-          if (selectedStart && selectedEnd) {
+          if (selectedStart && selectedEnd && selectedStart.group_code !== selectedEnd.group_code) {
             onSelect(selectedStart.group_code, selectedEnd.group_code, time);
           }
         }}
@@ -226,8 +233,17 @@ export const RouteSelection: React.FC<RouteSelectionProps> = ({
                       selectedIndex === idx
                         ? "bg-secondary/70"
                         : "hover:bg-secondary"
+                    } ${
+                      (focused === "start" && item.group_code === selectedEnd?.group_code) ||
+                      (focused === "end" && item.group_code === selectedStart?.group_code)
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                     }`}
                     onMouseDown={() => {
+                      if ((focused === "start" && item.group_code === selectedEnd?.group_code) ||
+                          (focused === "end" && item.group_code === selectedStart?.group_code)) {
+                        return;
+                      }
                       setInputValue(item.group_name);
                       setHoveredName("");
                       setSelectedIndex(-1);

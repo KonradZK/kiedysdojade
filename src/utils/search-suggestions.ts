@@ -1,6 +1,83 @@
 import type { StopGroup } from "@/components/sidebar/types";
 
 /**
+ * Aliases for common abbreviations
+ */
+const ALIASES: Record<string, string> = {
+  "św.": "świętego",
+  "sw.": "świętego",
+  "św": "świętego",
+  "sw": "świętego",
+  "os.": "osiedle",
+  "os": "osiedle",
+  "ul.": "ulica",
+  "ul": "ulica",
+  "al.": "aleja",
+  "al": "aleja",
+  "pl.": "plac",
+  "pl": "plac",
+  "gen.": "generała",
+  "gen": "generała",
+  "dr.": "doktora",
+  "dr": "doktora",
+  "prof.": "profesora",
+  "prof": "profesora",
+  "ks.": "księdza",
+  "ks": "księdza",
+};
+
+/**
+ * Remove diacritics (Polish characters like ą, ć, ę, ł, ń, ó, ś, ź, ż)
+ */
+function removeDiacritics(text: string): string {
+  return text
+    .replace(/ą/g, "a")
+    .replace(/ć/g, "c")
+    .replace(/ę/g, "e")
+    .replace(/ł/g, "l")
+    .replace(/ń/g, "n")
+    .replace(/ó/g, "o")
+    .replace(/ś/g, "s")
+    .replace(/ź/g, "z")
+    .replace(/ż/g, "z")
+    .replace(/Ą/g, "A")
+    .replace(/Ć/g, "C")
+    .replace(/Ę/g, "E")
+    .replace(/Ł/g, "L")
+    .replace(/Ń/g, "N")
+    .replace(/Ó/g, "O")
+    .replace(/Ś/g, "S")
+    .replace(/Ź/g, "Z")
+    .replace(/Ż/g, "Z");
+}
+
+/**
+ * Normalize text for searching:
+ * - Remove diacritics
+ * - Convert to lowercase
+ * - Remove spaces, dots, commas, and other punctuation
+ * - Replace aliases
+ */
+function normalizeText(text: string): string {
+  // First expand aliases
+  let normalized = text.toLowerCase();
+  
+  // Replace aliases (word boundaries)
+  Object.entries(ALIASES).forEach(([alias, expansion]) => {
+    const regex = new RegExp(`\\b${alias.replace(/\./g, "\\.")}\\b`, "gi");
+    normalized = normalized.replace(regex, expansion);
+  });
+
+  // Remove diacritics
+  normalized = removeDiacritics(normalized);
+
+  // Remove all non-alphanumeric characters (spaces, dots, commas, etc.)
+  normalized = normalized.replace(/[^a-z0-9]/g, "");
+
+  return normalized;
+}
+
+/**
  * Levenshtein distance algorithm for fuzzy matching
  * Allows matching with typos and missing letters
  */
@@ -32,24 +109,41 @@ function levenshteinDistance(a: string, b: string): number {
  * Higher score = better match
  */
 function getRelevanceScore(name: string, query: string): number {
-  const nameLower = name.toLowerCase();
-  const queryLower = query.toLowerCase();
+  const nameNormalized = normalizeText(name);
+  const queryNormalized = normalizeText(query);
 
-  // Prefix match scores highest (100)
-  if (nameLower.startsWith(queryLower)) return 100;
+  // Exact match (normalized) scores highest (100)
+  if (nameNormalized === queryNormalized) return 100;
 
-  // Word boundary match scores high (80)
-  const words = nameLower.split(/[\s\-\.]+/);
-  if (words.some((word) => word.startsWith(queryLower))) return 80;
+  // Prefix match scores very high (95)
+  if (nameNormalized.startsWith(queryNormalized)) return 95;
 
-  // Contains as substring (60)
-  if (nameLower.includes(queryLower)) return 60;
+  // Split name into words (before normalization) to check word boundaries
+  const words = name.toLowerCase().split(/[\s\-\.]+/);
+  const normalizedWords = words.map((w) => normalizeText(w));
 
-  // Fuzzy match (lower score based on distance)
-  const distance = levenshteinDistance(queryLower, nameLower);
-  const maxDistance = Math.ceil(queryLower.length * 0.3);
+  // Word boundary prefix match (90)
+  if (normalizedWords.some((word) => word.startsWith(queryNormalized))) return 90;
+
+  // Contains as substring (70)
+  if (nameNormalized.includes(queryNormalized)) return 70;
+
+  // Fuzzy match with Levenshtein distance (allows typos)
+  // Allow up to 30% of query length as edit distance
+  const maxDistance = Math.max(1, Math.ceil(queryNormalized.length * 0.3));
+  
+  // Check full name
+  let distance = levenshteinDistance(queryNormalized, nameNormalized);
   if (distance <= maxDistance) {
-    return Math.max(0, 40 - distance * 5); // 40 base score, -5 per edit
+    return Math.max(0, 50 - distance * 8); // 50 base score, -8 per edit
+  }
+
+  // Check individual words for fuzzy match
+  for (const word of normalizedWords) {
+    distance = levenshteinDistance(queryNormalized, word);
+    if (distance <= maxDistance) {
+      return Math.max(0, 45 - distance * 7); // 45 base score, -7 per edit
+    }
   }
 
   return 0;

@@ -1,9 +1,9 @@
-import type { Stop, RouteProps, LineInfo } from "./types";
+import type { Stop, RouteProps, LineInfo, PathElement } from "./types";
 import { Card, CardContent } from "../ui/card";
 import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item";
 import { Label } from "../ui/label";
 import { ScrollArea } from "../ui/scroll-area";
-import { MapPin } from "lucide-react";
+import { MapPin, Footprints, Clock } from "lucide-react";
 
 interface RouteDetailsProps {
   routeStops: Stop[];
@@ -20,7 +20,6 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
   }
 
   return (
-// wybrana trasa
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="font-semibold text-lg">Szczegóły trasy</h2>
@@ -49,15 +48,38 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
 
               <ItemContent>
                 <ItemTitle>
-                  <div className="flex items-center gap-2">
-                    {route.lines.map((line: LineInfo, index: number) => (
-                      <span
-                        key={index}
-                        className="bg-primary/10 text-primary rounded px-1.5 py-0.5 font-bold text-sm leading-none"
-                      >
-                        {line.lineNumber}
-                      </span>
-                    ))}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {route.lines.map((line: LineInfo, index: number) => {
+                      const color = line.colorHex;
+                      const textColor = line.textColorHex;
+                      
+                      if (line.lineNumber === "WALK") {
+                        return (
+                          <div
+                            key={index}
+                            className="rounded px-1.5 py-0.5 font-bold text-sm leading-none border border-border flex items-center gap-1"
+                            title="Przejście pieszo"
+                          >
+                            <Footprints className="w-4 h-4" />
+                          </div>
+                        );
+                      }
+                      
+                      const style: React.CSSProperties = {
+                        backgroundColor: color ? `${color}22` : undefined,
+                        color: textColor || color || undefined,
+                        borderColor: color || undefined,
+                      };
+                      return (
+                        <span
+                          key={index}
+                          style={style}
+                          className="rounded px-1.5 py-0.5 font-bold text-sm leading-none border"
+                        >
+                          {line.lineNumber}
+                        </span>
+                      );
+                    })}
                   </div>
                 </ItemTitle>
                 <ItemDescription>
@@ -78,28 +100,47 @@ const RouteDetails = ({ routeStops, route }: RouteDetailsProps) => {
           </CardContent>
         </Card>
       )}
-{/* przystanki */}
       <div className="flex-1 overflow-y-auto pr-2">
         <ScrollArea className="h-60">
         <ul className="relative border-l border-gray-300 dark:border-gray-600 pl-6 ml-3">
-          {routeStops.map((stop, i) => (
-            <li key={i} className="mb-6 relative last:mb-0">
-              {i === 0 || i === routeStops.length - 1 ? (
-                <div className="absolute -left-[35px] top-0 z-10 bg-background">
-                  <MapPin className="w-6 h-6 text-primary fill-primary/20" />
+          {(route?.path || routeStops).map((item, i) => {
+            const stop = 'stop' in item ? item.stop : item;
+            const pathElement = 'stop' in item ? (item as PathElement) : null;
+            const isFirstOrLast = i === 0 || i === (route?.path || routeStops).length - 1;
+            
+            return (
+              <li key={i} className="mb-6 relative last:mb-0">
+                {isFirstOrLast ? (
+                  <div className="absolute -left-[35px] top-0 z-10 bg-background">
+                    <MapPin className="w-6 h-6 text-primary fill-primary/20" />
+                  </div>
+                ) : (
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 bg-background border-2 border-primary rounded-full z-10"></span>
+                )}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{stop.name}</span>
+                  </div>
+                  {pathElement && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {pathElement.arrival_time && i !== 0 && (
+                        <span className="text-xs bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {pathElement.arrival_time.substring(0, 5)}
+                        </span>
+                      )}
+                      {pathElement.departure_time && i !== (route?.path || routeStops).length - 1 && (
+                        <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {pathElement.departure_time.substring(0, 5)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <span className="absolute -left-[31px] top-1 w-4 h-4 bg-background border-2 border-primary rounded-full z-10"></span>
-              )
-              }
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{stop.name}</span>
-                </div>
-                {/* <span className="text-xs text-muted-foreground">{stop.code}</span> */}
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
         </ScrollArea>
       </div>

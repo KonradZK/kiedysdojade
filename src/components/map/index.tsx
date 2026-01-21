@@ -105,28 +105,49 @@ const Map = ({
       <>
         <CustomMarkers stops={stops} />
         {linesToRender.length > 0 ? (
-          linesToRender.map((line, idx) => {
-            // Special handling for WALK segments: draw a straight dotted white line between start and end codes
+          linesToRender.flatMap((line, idx) => {
             if (line.lineNumber === "WALK") {
               const start = stops.find((s) => s.code === line.startCode);
               const end = stops.find((s) => s.code === line.endCode);
-              const walkPositions =
-                start && end
-                  ? [
-                      { lat: start.lat, lng: start.lon },
-                      { lat: end.lat, lng: end.lon },
-                    ]
-                  : [];
-              return (
-                <Polylines
-                  key={`${line.lineNumber}-${idx}`}
-                  positions={walkPositions.length > 0 ? walkPositions : defaultPositions}
-                  color="#ffffff"
-                  weight={3}
-                  dashArray="2 10"
-                />
+              
+              if (!start || !end) {
+                return [];
+              }
+
+              const startIdx = stops.findIndex((s) => s.code === line.startCode);
+              const endIdx = stops.findIndex((s) => s.code === line.endCode);
+
+              if (startIdx === -1 || endIdx === -1) {
+                return [];
+              }
+
+              const walkStops = stops.slice(
+                Math.min(startIdx, endIdx),
+                Math.max(startIdx, endIdx) + 1
               );
+
+              const walkPolylines = [];
+              for (let i = 0; i < walkStops.length - 1; i++) {
+                const current = walkStops[i];
+                const next = walkStops[i + 1];
+                const positions = [
+                  { lat: current.lat, lng: current.lon },
+                  { lat: next.lat, lng: next.lon },
+                ];
+                walkPolylines.push(
+                  <Polylines
+                    key={`${line.lineNumber}-${idx}-${i}`}
+                    positions={positions}
+                    color="#ffffff"
+                    weight={3}
+                    dashArray="2 10"
+                  />
+                );
+              }
+
+              return walkPolylines;
             }
+
             const positions =
               line.shape.length > 0
                 ? line.shape.map((p) => ({ lat: p.lat, lng: p.lon }))
